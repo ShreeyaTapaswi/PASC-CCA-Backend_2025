@@ -49,6 +49,18 @@ npm run dev
 
 ## API Documentation
 
+### Swagger UI
+The API documentation is available through Swagger UI. Once the server is running, you can access it at:
+```
+http://localhost:3000/api-docs
+```
+
+This interactive documentation allows you to:
+- View all available endpoints
+- Test API endpoints directly from the browser
+- See request/response schemas
+- Understand authentication requirements
+
 ### Authentication Endpoints
 
 #### User Authentication
@@ -161,10 +173,10 @@ Authorization: Bearer <token>
 ## Database Schema
 
 ### User
-- id: Int (Primary Key)
-- name: String (Optional)
+- id: String (UUID, Primary Key)
 - email: String (Unique)
 - password: String
+- name: String (Optional)
 - department: Department (Enum)
 - year: Int
 - passoutYear: Int
@@ -172,14 +184,32 @@ Authorization: Bearer <token>
 - hours: Float
 - createdAt: DateTime
 - updatedAt: DateTime
+- tokens: UserToken[] (Relation)
 
 ### Admin
-- id: Int (Primary Key)
-- name: String (Optional)
+- id: String (UUID, Primary Key)
 - email: String (Unique)
 - password: String
+- name: String (Optional)
 - createdAt: DateTime
 - updatedAt: DateTime
+- tokens: AdminToken[] (Relation)
+
+### UserToken
+- id: String (UUID, Primary Key)
+- token: String
+- userId: String (Foreign Key to User)
+- createdAt: DateTime
+- expiresAt: DateTime
+- user: User (Relation)
+
+### AdminToken
+- id: String (UUID, Primary Key)
+- token: String
+- adminId: String (Foreign Key to Admin)
+- createdAt: DateTime
+- expiresAt: DateTime
+- admin: Admin (Relation)
 
 ### Department Enum
 - CE
@@ -187,6 +217,10 @@ Authorization: Bearer <token>
 - ENTC
 - ECE
 - AIDS
+
+### Relationships
+- User 1:N UserToken (One user can have multiple tokens)
+- Admin 1:N AdminToken (One admin can have multiple tokens)
 
 ## Development
 
