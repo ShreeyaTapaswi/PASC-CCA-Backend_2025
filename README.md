@@ -173,7 +173,7 @@ Authorization: Bearer <token>
 ## Database Schema
 
 ### User
-- id: String (UUID, Primary Key)
+- id: Int (Primary Key, Auto-increment)
 - email: String (Unique)
 - password: String
 - name: String (Optional)
@@ -185,9 +185,11 @@ Authorization: Bearer <token>
 - createdAt: DateTime
 - updatedAt: DateTime
 - tokens: UserToken[] (Relation)
+- rsvps: Rsvp[] (Relation)
+- attendances: Attendance[] (Relation)
 
 ### Admin
-- id: String (UUID, Primary Key)
+- id: Int (Primary Key, Auto-increment)
 - email: String (Unique)
 - password: String
 - name: String (Optional)
@@ -195,32 +197,84 @@ Authorization: Bearer <token>
 - updatedAt: DateTime
 - tokens: AdminToken[] (Relation)
 
-### UserToken
-- id: String (UUID, Primary Key)
-- token: String
-- userId: String (Foreign Key to User)
+### Event
+- id: Int (Primary Key, Auto-increment)
+- title: String
+- description: String
+- location: String
+- credits: Float
+- numDays: Int
+- status: EventStatus (Enum)
+- startDate: DateTime
+- endDate: DateTime
 - createdAt: DateTime
-- expiresAt: DateTime
+- updatedAt: DateTime
+- rsvps: Rsvp[] (Relation)
+- sessions: AttendanceSession[] (Relation)
+
+### Rsvp
+- id: Int (Primary Key, Auto-increment)
 - user: User (Relation)
+- userId: Int (Foreign Key)
+- event: Event (Relation)
+- eventId: Int (Foreign Key)
+- createdAt: DateTime
+- @@unique([userId, eventId])
+
+### AttendanceSession
+- id: Int (Primary Key, Auto-increment)
+- event: Event (Relation)
+- eventId: Int (Foreign Key)
+- startTime: DateTime
+- endTime: DateTime (Optional)
+- code: String
+- attendances: Attendance[] (Relation)
+
+### Attendance
+- id: Int (Primary Key, Auto-increment)
+- user: User (Relation)
+- userId: Int (Foreign Key)
+- session: AttendanceSession (Relation)
+- sessionId: Int (Foreign Key)
+- attendedAt: DateTime
+- @@unique([userId, sessionId])
+
+### UserToken
+- id: Int (Primary Key, Auto-increment)
+- token: String (Unique)
+- user: User (Relation)
+- userId: Int (Foreign Key)
+- createdAt: DateTime
 
 ### AdminToken
-- id: String (UUID, Primary Key)
-- token: String
-- adminId: String (Foreign Key to Admin)
-- createdAt: DateTime
-- expiresAt: DateTime
+- id: Int (Primary Key, Auto-increment)
+- token: String (Unique)
 - admin: Admin (Relation)
+- adminId: Int (Foreign Key)
+- createdAt: DateTime
 
-### Department Enum
+### Enums
+
+#### Department
 - CE
 - IT
 - ENTC
 - ECE
 - AIDS
 
+#### EventStatus
+- UPCOMING
+- ONGOING
+- COMPLETED
+
 ### Relationships
 - User 1:N UserToken (One user can have multiple tokens)
+- User 1:N Rsvp (One user can have multiple RSVPs)
+- User 1:N Attendance (One user can have multiple attendances)
 - Admin 1:N AdminToken (One admin can have multiple tokens)
+- Event 1:N Rsvp (One event can have multiple RSVPs)
+- Event 1:N AttendanceSession (One event can have multiple attendance sessions)
+- AttendanceSession 1:N Attendance (One session can have multiple attendances)
 
 ## Development
 
