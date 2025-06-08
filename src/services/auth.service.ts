@@ -34,19 +34,19 @@ const generateToken = (payload: ITokenPayload): string => {
 // Helper function to create token with retry
 const createTokenWithRetry = async (
   token: string,
-  userId?: string,
-  adminId?: string,
+  userId?: number,
+  adminId?: number,
   payload?: ITokenPayload
 ): Promise<void> => {
   try {
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days from now
     if (userId) {
       await prisma.userToken.create({
-        data: { token, userId, expiresAt },
+        data: { token, expiresAt, user: { connect: { id: userId } } },
       });
     } else if (adminId) {
       await prisma.adminToken.create({
-        data: { token, adminId, expiresAt },
+        data: { token, expiresAt, admin: { connect: { id: adminId } } },
       });
     }
   } catch (error) {

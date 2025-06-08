@@ -19,40 +19,100 @@ enum Department {
 }
 
 model User {
-  id          String     @id @default(uuid())
-  email       String     @unique
-  password    String
+  id          Int          @id @default(autoincrement())
   name        String?
+  email       String       @unique
+  password    String
   department  Department
   year        Int
   passoutYear Int
   roll        Int
-  hours       Int        @default(0)
-  createdAt   DateTime   @default(now())
-  updatedAt   DateTime   @updatedAt
+  hours       Float
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  rsvps       Rsvp[]
+  attendances Attendance[]
+  tokens      UserToken[]  // One-to-many relation with user tokens
 }
 
 model Admin {
-  id        String   @id @default(uuid())
-  email     String   @unique
-  password  String
-  name      String?
+  id         Int           @id @default(autoincrement())
+  name       String?
+  email      String        @unique
+  password   String
+  createdAt  DateTime      @default(now())
+  updatedAt  DateTime      @updatedAt
+  tokens     AdminToken[]  // One-to-many relation with admin tokens
+}
+
+model Event {
+  id          Int                 @id @default(autoincrement())
+  title       String
+  description String
+  location    String
+  credits     Float
+  numDays     Int
+  status      EventStatus
+  startDate   DateTime
+  endDate     DateTime
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  rsvps       Rsvp[]
+  sessions    AttendanceSession[]
+}
+
+model Rsvp {
+  id        Int      @id @default(autoincrement())
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  event     Event    @relation(fields: [eventId], references: [id])
+  eventId   Int
   createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+
+  @@unique([userId, eventId])
+}
+
+model AttendanceSession {
+  id        Int       @id @default(autoincrement())
+  event     Event     @relation(fields: [eventId], references: [id])
+  eventId   Int
+  startTime DateTime  @default(now())
+  endTime   DateTime?
+  code      String
+  attendances Attendance[]
+}
+
+model Attendance {
+  id         Int               @id @default(autoincrement())
+  user       User              @relation(fields: [userId], references: [id])
+  userId     Int
+  session    AttendanceSession @relation(fields: [sessionId], references: [id])
+  sessionId  Int
+  attendedAt DateTime          @default(now())
+
+  @@unique([userId, sessionId])
 }
 
 model UserToken {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   token     String   @unique
-  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
   createdAt DateTime @default(now())
   expiresAt DateTime
 }
 
 model AdminToken {
-  id        String   @id @default(uuid())
+  id        Int      @id @default(autoincrement())
   token     String   @unique
-  adminId   String
+  admin     Admin    @relation(fields: [adminId], references: [id])
+  adminId   Int
   createdAt DateTime @default(now())
   expiresAt DateTime
+}
+
+enum EventStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
 } 
