@@ -51,6 +51,7 @@ model Event {
   description String
   location    String
   credits     Float
+  capacity    Int
   numDays     Int
   status      EventStatus
   startDate   DateTime
