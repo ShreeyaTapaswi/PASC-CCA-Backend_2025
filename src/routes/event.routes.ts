@@ -1,16 +1,18 @@
 import { Router } from 'express';
-import { authenticateAdmin } from '../middlewares/auth.middleware';
-import { createEvent, getEvents, getEventById, updateEvent, deleteEvent } from '../controllers/event.controller';
+import {  authenticateToken, requireAdmin } from '../middlewares/auth.middleware';
+import { createEvent, getEventsForAdmin,getEvents, getEventById, updateEvent, deleteEvent } from '../controllers/event.controller';
 
 const router = Router();
 
 // Admin routes
-router.post('/', authenticateAdmin, createEvent);
-router.put('/:id', authenticateAdmin, updateEvent);
-router.delete('/:id', authenticateAdmin, deleteEvent);
+router.post('/', authenticateToken, requireAdmin, createEvent);
+router.put('/:id', authenticateToken, requireAdmin , updateEvent);
+router.delete('/:id', authenticateToken, requireAdmin , deleteEvent);
+router.get('/admin',authenticateToken , requireAdmin , getEventsForAdmin)
 
 // Public routes
 router.get('/', getEvents);
 router.get('/:id', getEventById);
+
 
 export default router; 

@@ -29,9 +29,9 @@ const options: swaggerJsdoc.Options = {
             id: { type: 'integer' },
             name: { type: 'string' },
             email: { type: 'string', format: 'email' },
-            department: { 
+            department: {
               type: 'string',
-              enum: ['CE', 'IT', 'ENTC', 'ECE', 'AIDS']
+              enum: ['CE', 'IT', 'ENTC', 'ECE', 'AIDS'],
             },
             year: { type: 'integer' },
             passoutYear: { type: 'integer' },
@@ -70,12 +70,67 @@ const options: swaggerJsdoc.Options = {
           properties: {
             success: { type: 'boolean' },
             error: { type: 'string' },
+            message: { type: 'string' },
+          },
+        },
+        Event: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            location: { type: 'string' },
+            credits: { type: 'number' },
+            numDays: { type: 'integer' },
+            capacity: { type: 'integer' },
+            status: {
+              type: 'string',
+              enum: ['UPCOMING', 'ONGOING', 'COMPLETED'],
+            },
+            startDate: { type: 'string', format: 'date-time' },
+            endDate: { type: 'string', format: 'date-time' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        EventResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: { $ref: '#/components/schemas/Event' },
+          },
+        },
+        Pagination: {
+          type: 'object',
+          properties: {
+            total: { type: 'integer' },
+            page: { type: 'integer' },
+            limit: { type: 'integer' },
+            pages: { type: 'integer' },
+          },
+        },
+        PaginatedEventData: {
+          type: 'object',
+          properties: {
+            events: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/Event' },
+            },
+            pagination: { $ref: '#/components/schemas/Pagination' },
+          },
+        },
+        PaginatedEventResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/PaginatedEventData' },
           },
         },
       },
     },
   },
-  apis: ['./src/controllers/*.ts'], // Path to the API docs
+  apis: ['./src/controllers/*.ts'], // Adjust path as necessary
 };
 
-export const swaggerSpec = swaggerJsdoc(options); 
+export const swaggerSpec = swaggerJsdoc(options);
