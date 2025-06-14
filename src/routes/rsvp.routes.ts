@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, requireUser , requireAdmin} from '../middlewares/auth.middleware';
-import { createRsvp, deleteRsvp, getRsvpForEvent, getRsvpUser, updateRsvp } from 'src/controllers/rsvp.controller';
+import { createRsvp, deleteRsvp, getRsvpForEvent, getRsvpUser, updateRsvp } from '../controllers/rsvp.controller';
 
 
 const router = Router();
