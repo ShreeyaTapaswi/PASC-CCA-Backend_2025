@@ -6,6 +6,7 @@ import swaggerUi from 'swagger-ui-express';
 import { swaggerSpec } from './config/swagger';
 import authRoutes from './routes/auth.routes';
 import eventRoutes from './routes/event.routes';
+import rsvpRoures from './routes/rsvp.routes';
 import dotenv from 'dotenv';
 import { 
   registerUser, 
@@ -49,7 +50,7 @@ app.get('/api/auth/admin/me', authenticateToken, requireAdmin, getCurrentAdmin);
 // Routes
 app.use('/api/auth', authRoutes);
 app.use('/api/events' , eventRoutes);
-
+app.use('/api/rsvps', rsvpRoures);
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
