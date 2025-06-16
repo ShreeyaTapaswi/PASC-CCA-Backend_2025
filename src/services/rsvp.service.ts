@@ -3,28 +3,43 @@ import { RsvpResponse, RsvpAndEventResponse, RsvpAndUserResponse, RsvpCreate } f
 
 
 const prisma = new PrismaClient();
-
 export const postrsvp = async (rsvpData: RsvpCreate, userId: number): Promise<RsvpResponse> => {
-    
-        try {
-        const result = await prisma.rsvp.create({
-            data: {
-                ...rsvpData,
-                userId: userId  
-            }
-        });
-        
-        return {
-            success: true,
-            message: 'RSVP created successfully',
-            data: result
-        };
-    } catch (error) {
-        console.error('Service error:', error);
-        throw error;
+  try {
+  const existingRsvp = await prisma.rsvp.findUnique({
+      where: {
+        userId_eventId: {  
+          userId: userId,
+          eventId: rsvpData.eventId
+        }
+      }
+    });
+    console.log(existingRsvp);
+    if (existingRsvp) {
+      return {
+        success: false,
+        message: 'RSVP already exists for this user and event',
+        data: existingRsvp,
+      };
     }
-};          // check it is according to the promise or not
 
+
+    const result = await prisma.rsvp.create({
+      data: {
+        ...rsvpData,
+        userId: userId  
+      }
+    });
+    
+    return {
+      success: true,
+      message: 'RSVP created successfully',
+      data: result
+    };
+  } catch (error) {
+    console.error('Service error:', error);
+    throw error;
+  }
+};
 export const getUserRsvps = async (userId: number): Promise<RsvpAndEventResponse> => {
   try {
     const rsvps = await prisma.rsvp.findMany({
