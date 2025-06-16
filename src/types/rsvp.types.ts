@@ -30,7 +30,7 @@ export interface RsvpWithEvents {
     eventId: number;
     userId: number;
     createdAt: Date;
-    event: EventData;
+    event: EventData;   
 }
 
 export interface RsvpWithUser {

@@ -261,6 +261,32 @@ export const getRsvpForEvent = async (req: Request, res: Response) => {
   }
 };
 
+
+export const getRsvpByEventId = async (req: Request, res: Response) => {
+  try {
+    const eventId = parseInt(req.params.eventId);
+    if (isNaN(eventId)) {
+      return res.status(400).json({ success: false, error: "Invalid event ID" });
+    }
+
+    const rsvp = await findRsvpByEventId(eventId);
+    if (!rsvp) {
+      return res.status(404).json({ success: false, error: "RSVP not found for this event" });
+    }
+
+    res.status(200).json(rsvp);
+  } catch (error) {
+    console.error('Controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unexpected error'
+    });
+  }
+}
+
+
+
 export const updateRsvp = async (req: Request, res: Response) => {
   // Logic to update RSVP
   res.status(200).json({ message: "RSVP updated successfully" });
