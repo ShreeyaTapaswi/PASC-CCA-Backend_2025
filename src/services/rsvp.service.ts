@@ -109,7 +109,7 @@ export const findRsvpByEventId = async (eventId: number):Promise<RsvpResponse> =
 };
 
 
-export const getRsvpsByEventId = async (eventId: number) : Promise<RsvpWithUser[]> =>{
+export const getRsvpsByEventId = async (eventId: number) : Promise<RsvpWithUser> =>{
 
         const event = await prisma.event.findUnique({
         where: { id: eventId },

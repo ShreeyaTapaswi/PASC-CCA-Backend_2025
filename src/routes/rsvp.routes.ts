@@ -1,7 +1,8 @@
 import { Router } from 'express';
 
 import { authenticateToken, requireUser, requireAdmin } from '../middlewares/auth.middleware';
-import { createRsvp, deleteRsvp, getRsvpForEvent, getRsvpUser, updateRsvp ,getRsvpsForEvent} from '../controllers/rsvp.controller';
+import { createRsvp, deleteRsvp, getRsvpByEventId, getRsvpForEvent, getRsvpUser, updateRsvp} from '../controllers/rsvp.controller';
+
 
 
 const router = Router();
@@ -11,7 +12,7 @@ router.post('/', authenticateToken, requireUser, createRsvp);
 router.put('/:id', authenticateToken, requireUser, updateRsvp);
 router.delete('/:id', authenticateToken, requireAdmin, deleteRsvp);
 router.get('/rsvps/user', authenticateToken, requireUser, getRsvpUser);
-router.get('/events/:eventId/rsvp', authenticateToken, requireUser, getRsvpForEvent);
-router.get('/event/:eventId' , authenticateToken ,requireAdmin , getRsvpForEvent) ;
+router.get('/events/:eventId/rsvp', authenticateToken, requireUser, getRsvpByEventId);
+router.get('/event/:eventId' , authenticateToken ,requireAdmin , getRsvpForEvent);
 
 export default router;
