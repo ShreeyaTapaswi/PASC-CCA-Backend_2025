@@ -3,19 +3,24 @@ import { ApiResponse, EventData } from "./event.types";
 
 export type RsvpStatus = "ATTENDING" | "NOT_ATTENDING";
 
-export interface Rsvp {
-    id: number;
-    eventId: number;
-    userId: number;
-    status: RsvpStatus;
-    createdAt: Date;
+// export interface Rsvp {
+//     id: number;
+//     eventId: number;
+//     userId: number;
+//     status: RsvpStatus;
+//     createdAt: Date;
+// }
+
+export interface RsvpCreate {
+  eventId: number,
+  status: RsvpStatus
 }
 
-export interface RsvpResponse {
+export interface Rsvp {
     id: number; 
-    eventId: number;
-    userId: number;
-    status: RsvpStatus;
+    eventId: number; //ip
+    userId: number; //midleware
+    status: RsvpStatus;//ip
     createdAt: Date;
 }
 
@@ -37,6 +42,6 @@ export interface RsvpWithUser {
     user: User;
 }
 
-export type EventResponse = ApiResponse<RsvpResponse>;
+export type RsvpResponse = ApiResponse<Rsvp>;
 export type RsvpAndEventResponse = ApiResponse<RsvpWithEvents>;
 export type RsvpAndUserResponse = ApiResponse<RsvpWithUser>;
