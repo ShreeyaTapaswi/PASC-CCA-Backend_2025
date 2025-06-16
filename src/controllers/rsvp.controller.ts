@@ -159,6 +159,10 @@ export const getRsvpUser = async (req: Request, res: Response) => {
     
     const result = await getUserRsvps(userId);
     
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
     res.status(200).json(result);
   } catch (error) {
     console.error('Controller error:', error);
@@ -230,34 +234,31 @@ export const getRsvpUser = async (req: Request, res: Response) => {
  */
 
 export const getRsvpForEvent = async (req: Request, res: Response) => {
-
-  // Logic to get RSVP for an event
   try {
-    const eventId = parseInt(req.params.eventId) ;
+    const eventId = parseInt(req.params.eventId);
 
-    if(isNaN(eventId)){
-      return res.status(400).json({success:false , error:"invalid event ID"}) ;
+    if (isNaN(eventId)) {
+      return res.status(400).json({
+        success: false,
+        message: "Invalid event ID"
+      });
     }
 
-   
+    const result = await getRsvpsByEventId(eventId);
 
-    const rsvps = await getRsvpsByEventId(eventId) ;
-
-     if (rsvps === null) {
-      return res.status(404).json({ success: false, error: "Event not found" });
+    if (!result.success) {
+      return res.status(404).json(result);
     }
 
-    return res.status(200).json({
-      success : true ,
-      data : rsvps ,
-    }) ;
-    }catch(error) {
-      console.error("Error getting RSVPs :" , error) ;
-      return res.status(500).json({success : false , error:"Internal server error"}) ;
-    }
-  //res.status(200).json({ message: "RSVP for event fetched successfully" });
-
-
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Error getting RSVPs:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: error instanceof Error ? error.message : 'Unexpected error'
+    });
+  }
 };
 
 export const updateRsvp = async (req: Request, res: Response) => {

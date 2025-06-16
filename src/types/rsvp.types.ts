@@ -42,6 +42,16 @@ export interface RsvpWithUser {
     user: User;
 }
 
+export interface FormattedRsvp {
+    id: string;
+    userId: string;
+    eventId: string;
+    status: RsvpStatus;
+    createdAt: string;
+    updatedAt: string;
+}
+
 export type RsvpResponse = ApiResponse<Rsvp>;
 export type RsvpAndEventResponse = ApiResponse<RsvpWithEvents>;
 export type RsvpAndUserResponse = ApiResponse<RsvpWithUser>;
+export type FormattedRsvpResponse = ApiResponse<FormattedRsvp>;
