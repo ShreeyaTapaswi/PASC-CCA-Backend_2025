@@ -14,8 +14,6 @@ router.get('/admin',authenticateToken , requireAdmin , getEventsForAdmin)
 router.get('/', getEvents);
 router.get('/:id', getEventById);
 
-//User Routes
-
 
 
 export default router; 
