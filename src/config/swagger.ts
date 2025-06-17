@@ -127,10 +127,76 @@ const options: swaggerJsdoc.Options = {
             data: { $ref: '#/components/schemas/PaginatedEventData' },
           },
         },
+        Rsvp: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer' },
+            userId: { type: 'integer' },
+            status: {
+              type: 'string',
+              enum: ['ATTENDING', 'NOT_ATTENDING'],
+            },
+          },
+        },
+        RsvpResponse: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer' },
+            userId: { type: 'integer' },
+            status: {
+              type: 'string',
+              enum: ['ATTENDING', 'NOT_ATTENDING'],
+            },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+          },
+        },
+        RsvpWithEvents: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer' },
+            userId: { type: 'integer' },
+            status: {
+              type: 'string',
+              enum: ['ATTENDING', 'NOT_ATTENDING'],
+            },
+            event: { $ref: '#/components/schemas/Event' },
+          },
+        },
+        RsvpWithUser: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer' },
+            userId: { type: 'integer' },
+            status: {
+              type: 'string',
+              enum: ['ATTENDING', 'NOT_ATTENDING'],
+            },
+            user: { $ref: '#/components/schemas/User' },
+          },
+        },
+        RsvpAndEventResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/RsvpWithEvents' },
+          },
+        },
+        RsvpAndUserResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/RsvpWithUser' },
+          },
+        },
       },
     },
   },
-  apis: ['./src/controllers/*.ts'], // Adjust path as necessary
+  apis: ['./src/controllers/*.ts'], // Adjust as needed
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
