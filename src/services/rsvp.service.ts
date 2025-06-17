@@ -1,14 +1,26 @@
 import { PrismaClient } from '@prisma/client';
-import { RsvpResponse,FormattedRsvp, RsvpAndEventResponse, RsvpAndUserResponse, RsvpCreate, RsvpWithUser, RsvpWithEvents ,FormattedRsvpResponse,RsvpStatus} from '../types/rsvp.types';
+import { RsvpResponse, RsvpCreate, RsvpWithUser, RsvpStatus } from '../types/rsvp.types';
 import { ApiResponse } from '../types/event.types';
 
 const prisma = new PrismaClient();
 
 export const postrsvp = async (rsvpData: RsvpCreate, userId: number): Promise<RsvpResponse> => {
   try {
+    const event = await prisma.event.findUnique({
+      where: {
+        id: rsvpData.eventId
+      }
+    })
+    if (!event) {
+      return {
+        success: false,
+        message: 'NO SUCH EVENT PRESENT'
+      };
+    }
+
     const existingRsvp = await prisma.rsvp.findUnique({
       where: {
-        userId_eventId: {  
+        userId_eventId: {
           userId: userId,
           eventId: rsvpData.eventId
         }
@@ -26,10 +38,10 @@ export const postrsvp = async (rsvpData: RsvpCreate, userId: number): Promise<Rs
     const result = await prisma.rsvp.create({
       data: {
         ...rsvpData,
-        userId: userId  
+        userId: userId
       }
     });
-    
+
     return {
       success: true,
       message: 'RSVP created successfully',
@@ -50,26 +62,10 @@ export const getUserRsvps = async (userId: number): Promise<ApiResponse<any[]>> 
       },
     });
 
-    const formattedRsvps = rsvps.map(rsvp => ({
-      id: rsvp.id.toString(),
-      userId: rsvp.userId.toString(),
-      eventId: rsvp.eventId.toString(),
-      status: rsvp.status,
-      createdAt: rsvp.createdAt.toISOString(),
-      updatedAt: rsvp.createdAt.toISOString(), // Using createdAt since updatedAt doesn't exist
-      event: {
-        id: rsvp.event.id.toString(),
-        title: rsvp.event.title,
-        description: rsvp.event.description,
-        date: rsvp.event.startDate.toISOString(),
-        location: rsvp.event.location,
-        capacity: rsvp.event.capacity
-      }
-    }));
 
     return {
       success: true,
-      data: formattedRsvps
+      data: rsvps
     };
   } catch (error) {
     console.error('Service error:', error);
@@ -77,12 +73,14 @@ export const getUserRsvps = async (userId: number): Promise<ApiResponse<any[]>> 
   }
 };
 
-export const getRsvpByEventId = async (eventId: number): Promise<ApiResponse<any>> => {
+export const getRsvpByEventId = async (userId: number, eventId: number): Promise<RsvpResponse> => {
   try {
-    const rsvp = await prisma.rsvp.findFirst({
-      where: { eventId },
-      include: {
-        event: true
+    const rsvp = await prisma.rsvp.findUnique({
+      where: {
+        userId_eventId: {
+          userId: userId,
+          eventId: eventId
+        }
       }
     });
 
@@ -94,26 +92,11 @@ export const getRsvpByEventId = async (eventId: number): Promise<ApiResponse<any
       };
     }
 
-    const formattedRsvp = {
-      id: rsvp.id.toString(),
-      userId: rsvp.userId.toString(),
-      eventId: rsvp.eventId.toString(),
-      status: rsvp.status,
-      createdAt: rsvp.createdAt.toISOString(),
-      updatedAt: rsvp.createdAt.toISOString(), // Using createdAt since updatedAt doesn't exist
-      event: {
-        id: rsvp.event.id.toString(),
-        title: rsvp.event.title,
-        description: rsvp.event.description,
-        date: rsvp.event.startDate.toISOString(),
-        location: rsvp.event.location,
-        capacity: rsvp.event.capacity
-      }
-    };
+
 
     return {
       success: true,
-      data: formattedRsvp
+      data: rsvp
     };
   } catch (error) {
     console.error('Service error:', error);
@@ -173,10 +156,10 @@ export const getRsvpsByEventId = async (eventId: number): Promise<ApiResponse<Rs
 };
 
 
-export const deleteRsvpById = async (rsvpId: number): Promise<RsvpResponse> => {
+export const deleteRsvpById = async (userId : number ,rsvpId: number): Promise<RsvpResponse> => {
   try {
     const existingRsvp = await prisma.rsvp.findUnique({
-      where: {id: rsvpId}
+      where: { id: rsvpId , userId : userId  }
     });
     if (!existingRsvp) {
       return {
@@ -186,7 +169,7 @@ export const deleteRsvpById = async (rsvpId: number): Promise<RsvpResponse> => {
       };
     }
     await prisma.rsvp.delete({
-      where: {id: rsvpId}
+      where: { id: rsvpId }
     });
     return {
       success: true,
@@ -203,10 +186,15 @@ export const deleteRsvpById = async (rsvpId: number): Promise<RsvpResponse> => {
   }
 }
 
-export const UpdateRsvp = async (eventId: number, status: RsvpStatus): Promise<FormattedRsvpResponse> => {
+export const UpdateRsvp = async (userId: number, eventId: number, status: RsvpStatus): Promise<RsvpResponse> => {
   try {
-    const existingRsvp = await prisma.rsvp.findFirst({
-      where: { eventId }
+    const existingRsvp = await prisma.rsvp.findUnique({
+      where: {
+        userId_eventId: {
+          userId: userId,
+          eventId: eventId
+        }
+      }
     });
 
     if (!existingRsvp) {
@@ -222,19 +210,12 @@ export const UpdateRsvp = async (eventId: number, status: RsvpStatus): Promise<F
       data: { status }
     });
 
-    const formattedRsvp: FormattedRsvp = {
-      id: updatedRsvp.id.toString(),
-      userId: updatedRsvp.userId.toString(),
-      eventId: updatedRsvp.eventId.toString(),
-      status: updatedRsvp.status,
-      createdAt: updatedRsvp.createdAt.toISOString(),
-      updatedAt: updatedRsvp.createdAt.toISOString()
-    };
+
 
     return {
       success: true,
       message: "RSVP updated successfully",
-      data: formattedRsvp
+      data: updatedRsvp
     };
 
   } catch (error) {
