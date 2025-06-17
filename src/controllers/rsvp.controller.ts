@@ -1,4 +1,4 @@
-import { PrismaClient } from "@prisma/client";
+import { PrismaClient, Rsvp } from "@prisma/client";
 
 import { Request, Response } from "express";
 
@@ -11,10 +11,10 @@ import {
   deleteRsvpById,
   UpdateRsvp,
 } from "../services/rsvp.service";
-
+import { ApiResponse } from "src/types/event.types";
 
 const prisma = new PrismaClient();
-console.log("findRsvpByEventId is:", findRsvpByEventId); // should NOT be undefined
+
 
 /**
  * @swagger
@@ -66,8 +66,6 @@ console.log("findRsvpByEventId is:", findRsvpByEventId); // should NOT be undefi
 
 export const createRsvp = async (req: Request, res: Response) => {
   try {
-    //  const { eventId, status,userId } = req.body;
-    // const userId = req.userId;
     const eventId = req.body.eventId;
     const status = req.body.status;
     const userId = req.user!.id;
@@ -94,14 +92,14 @@ export const createRsvp = async (req: Request, res: Response) => {
     });
   }
 };
-
 /**
  * @swagger
  * /api/rsvps/user:
  *   get:
- *     tags:
- *       - RSVP
  *     summary: Get all RSVPs for the authenticated user
+ *     tags: [RSVP]
+ *     security:
+ *       - bearerAuth: []
  *     responses:
  *       200:
  *         description: Returns all RSVPs for the user
@@ -112,6 +110,7 @@ export const createRsvp = async (req: Request, res: Response) => {
  *               properties:
  *                 success:
  *                   type: boolean
+ *                   example: true
  *                 data:
  *                   type: array
  *                   items:
@@ -119,35 +118,59 @@ export const createRsvp = async (req: Request, res: Response) => {
  *                     properties:
  *                       id:
  *                         type: string
+ *                         example: "clzxyzabc001"
  *                       userId:
  *                         type: string
+ *                         example: "clzuser123"
  *                       eventId:
  *                         type: string
+ *                         example: "clevent456"
  *                       status:
  *                         type: string
+ *                         enum: ["ATTENDING", "NOT_ATTENDING"]
+ *                         example: "ATTENDING"
  *                       createdAt:
  *                         type: string
+ *                         format: date-time
+ *                         example: "2025-06-17T10:30:00Z"
  *                       updatedAt:
  *                         type: string
+ *                         format: date-time
+ *                         example: "2025-06-17T10:45:00Z"
  *                       event:
  *                         type: object
  *                         properties:
  *                           id:
  *                             type: string
+ *                             example: "clevent456"
  *                           title:
  *                             type: string
+ *                             example: "Tech Meetup"
  *                           description:
  *                             type: string
+ *                             example: "A networking event for developers."
  *                           date:
  *                             type: string
+ *                             format: date
+ *                             example: "2025-07-01"
  *                           location:
  *                             type: string
+ *                             example: "Mumbai, India"
  *                           capacity:
- *                             type: number
+ *                             type: integer
+ *                             example: 200
  *       401:
  *         description: User not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  *       500:
- *         description: Internal server error
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
  */
 export const getRsvpUser = async (req: Request, res: Response) => {
   try {
@@ -268,7 +291,7 @@ export const getRsvpForEvent = async (req: Request, res: Response) => {
 
 /**
  * @swagger
- * /events/{eventId}/rsvp:
+ * /api/rsvps/events/{eventId}/rsvp:
  *   get:
  *     summary: Get RSVP details for a specific event (User only)
  *     tags: [RSVP]
@@ -365,30 +388,34 @@ export const getRsvpForEvent = async (req: Request, res: Response) => {
 export const getRsvpByEventIdController = async (
   req: Request,
   res: Response
-): Promise<Response> => {
+): Promise<void> => {
   try {
+    const userId = req.user?.id as number;
     const eventId = parseInt(req.params.eventId);
     if (isNaN(eventId)) {
-      return res.status(400).json({
+      res.status(400).json({
         success: false,
         message: "Invalid event ID",
       });
+      return;
     }
 
-    const result = await getRsvpByEventIdService(eventId);
+    const result = await getRsvpByEventIdService(userId , eventId);
 
     if (!result.success) {
-      return res.status(404).json(result);
+      res.status(404).json(result);
+      return
     }
 
-    return res.status(200).json(result);
+    res.status(200).json(result);return;
   } catch (error) {
     console.error("Controller error:", error);
-    return res.status(500).json({
+    res.status(500).json({
       success: false,
       message: "Internal server error",
       error: error instanceof Error ? error.message : "Unexpected error",
     });
+    return;
   }
 };
 
@@ -457,6 +484,7 @@ export const getRsvpByEventIdController = async (
 
 export const updateRsvp = async (req: Request, res: Response) => {
   try {
+    const userId = req.user?.id as number;
     const eventId = parseInt(req.params.id);
     const status = req.body.status;
     console.log(eventId);
@@ -468,7 +496,7 @@ export const updateRsvp = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await UpdateRsvp(eventId, status);
+    const result = await UpdateRsvp(userId , eventId, status);
 
     if (!result.success) {
       return res.status(404).json(result);
@@ -575,6 +603,7 @@ export const updateRsvp = async (req: Request, res: Response) => {
 
 export const deleteRsvp = async (req: Request, res: Response) => {
   try {
+    const userId = req.user?.id as number;
     const rsvpId = parseInt(req.params.id);
     if (isNaN(rsvpId)) {
       return res
@@ -582,7 +611,7 @@ export const deleteRsvp = async (req: Request, res: Response) => {
         .json({ success: false, message: "Invalid RSVP ID" });
     }
 
-    const result = await deleteRsvpById(rsvpId);
+    const result = await deleteRsvpById(userId , rsvpId);
 
     if (!result.success) {
       return res.status(404).json(result);

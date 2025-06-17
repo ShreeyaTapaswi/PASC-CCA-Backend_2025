@@ -197,7 +197,6 @@ export const getEventsForAdmin = async (req: Request, res: Response): Promise<vo
 export const updateEvent = async (req: Request, res: Response): Promise<void> => {
   try {
     const eventId = parseInt(req.params.id);
-    console.log('Event ID:', eventId);
     if (isNaN(eventId)) {
       res.status(400).json({ success: false, message: 'Invalid event ID' });
       return;
