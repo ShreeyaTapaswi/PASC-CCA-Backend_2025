@@ -440,6 +440,6 @@ export const getEventById = async (req: Request, res: Response): Promise<void> =
   }
 }
 
-export const getUserRsvpForEvent = async (req: Request, res: Response): Promise<void> => {
-   res.status(200).json({ message: "User RSVP for event fetched successfully" });
-}
+// export const getUserRsvpForEvent = async (req: Request, res: Response): Promise<void> => {
+//    res.status(200).json({ message: "User RSVP for event fetched successfully" });
+// }

@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {  authenticateToken, requireAdmin, requireUser } from '../middlewares/auth.middleware';
-import { createEvent, getEventsForAdmin,getEvents, getEventById, updateEvent, deleteEvent, getUserRsvpForEvent } from '../controllers/event.controller';
+import { createEvent, getEventsForAdmin,getEvents, getEventById, updateEvent, deleteEvent } from '../controllers/event.controller';
 
 const router = Router();
 
@@ -15,7 +15,7 @@ router.get('/', getEvents);
 router.get('/:id', getEventById);
 
 //User Routes
-router.get('/:eventId/rsvp', authenticateToken, requireUser ,getUserRsvpForEvent);
+
 
 
 export default router; 

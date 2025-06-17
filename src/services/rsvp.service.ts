@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { RsvpResponse, RsvpAndEventResponse, RsvpAndUserResponse, RsvpCreate, RsvpWithUser, RsvpWithEvents } from '../types/rsvp.types';
+import { RsvpResponse,FormattedRsvp, RsvpAndEventResponse, RsvpAndUserResponse, RsvpCreate, RsvpWithUser, RsvpWithEvents ,FormattedRsvpResponse,RsvpStatus} from '../types/rsvp.types';
 import { ApiResponse } from '../types/event.types';
 
 const prisma = new PrismaClient();
@@ -172,6 +172,7 @@ export const getRsvpsByEventId = async (eventId: number): Promise<ApiResponse<Rs
   };
 };
 
+
 export const deleteRsvpById = async (rsvpId: number): Promise<RsvpResponse> => {
   try {
     const existingRsvp = await prisma.rsvp.findUnique({
@@ -201,3 +202,47 @@ export const deleteRsvpById = async (rsvpId: number): Promise<RsvpResponse> => {
     };
   }
 }
+
+export const UpdateRsvp = async (eventId: number, status: RsvpStatus): Promise<FormattedRsvpResponse> => {
+  try {
+    const existingRsvp = await prisma.rsvp.findFirst({
+      where: { eventId }
+    });
+
+    if (!existingRsvp) {
+      return {
+        success: false,
+        message: "RSVP not found",
+        data: undefined
+      };
+    }
+
+    const updatedRsvp = await prisma.rsvp.update({
+      where: { id: existingRsvp.id },
+      data: { status }
+    });
+
+    const formattedRsvp: FormattedRsvp = {
+      id: updatedRsvp.id.toString(),
+      userId: updatedRsvp.userId.toString(),
+      eventId: updatedRsvp.eventId.toString(),
+      status: updatedRsvp.status,
+      createdAt: updatedRsvp.createdAt.toISOString(),
+      updatedAt: updatedRsvp.createdAt.toISOString()
+    };
+
+    return {
+      success: true,
+      message: "RSVP updated successfully",
+      data: formattedRsvp
+    };
+
+  } catch (error) {
+    console.error("Service error updating RSVP:", error);
+    return {
+      success: false,
+      message: "Failed to update RSVP",
+      data: undefined
+    };
+  }
+};
