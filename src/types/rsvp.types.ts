@@ -43,7 +43,6 @@ export interface RsvpWithUser {
 }
 
 
-
 export type RsvpResponse = ApiResponse<Rsvp>;
 export type RsvpAndEventResponse = ApiResponse<RsvpWithEvents>;
 export type RsvpAndUserResponse = ApiResponse<RsvpWithUser>;
