@@ -93,12 +93,97 @@ const options: swaggerJsdoc.Options = {
             updatedAt: { type: 'string', format: 'date-time' },
           },
         },
-        EventResponse: {
+        AttendanceSession: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time', nullable: true },
+            isActive: { type: 'boolean' },
+            sessionName: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        AttendanceSessionInput: {
+          type: 'object',
+          properties: {
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time', nullable: true },
+            isActive: { type: 'boolean' },
+            sessionName: { type: 'string' },
+          },
+        },
+        AttendanceSessionCreate: {
+          type: 'object',
+          properties: {
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            sessionName: { type: 'string' },
+          },
+        },
+        AttendanceSessionUpdate: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer', nullable: true },
+            startTime: { type: 'string', format: 'date-time', nullable: true },
+            isActive: { type: 'boolean', nullable: true },
+            sessionName: { type: 'string', nullable: true },
+          },
+        },
+        AttendanceSessionToggleActive: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            isActive: { type: 'boolean' },
+            evnetId: { type: 'integer' }, // Typo retained from your interface
+          },
+        },
+        AttendanceSessionWithEvent: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time', nullable: true },
+            isActive: { type: 'boolean' },
+            sessionName: { type: 'string' },
+            code: { type: 'string' },
+            event: { $ref: '#/components/schemas/Event' },
+          },
+        },
+        Attendance: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            userId: { type: 'integer' },
+            sessionId: { type: 'integer' },
+            attendedAt: { type: 'string', format: 'date-time' },
+            user: { $ref: '#/components/schemas/User' },
+            session: { $ref: '#/components/schemas/AttendanceSession' },
+          },
+        },
+        AttendanceResponse: {
           type: 'object',
           properties: {
             success: { type: 'boolean' },
-            message: { type: 'string' },
-            data: { $ref: '#/components/schemas/Event' },
+            data: { $ref: '#/components/schemas/Attendance' },
+          },
+        },
+        AttendanceSessionResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/AttendanceSession' },
+          },
+        },
+        AttendanceSessionWithEventResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/AttendanceSessionWithEvent' },
           },
         },
         Pagination: {
@@ -196,7 +281,7 @@ const options: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ['./src/controllers/*.ts'], // Adjust as needed
+  apis: ['./src/controllers/*.ts'], // Adjust to your actual controller path
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
