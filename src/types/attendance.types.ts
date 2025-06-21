@@ -4,7 +4,7 @@ import { ApiResponse, EventData } from "./event.types";
 export interface AttendanceSession {
   id?: number;
   eventId: number;
-  startTime: Date ;
+  startTime?: Date|null ;
   endTime?: Date | null;
   isActive: boolean;
   sessionName: string;

@@ -8,7 +8,7 @@ const router = Router();
 // Admin routes
 router.post('/events/:eventId/sessions', authenticateToken, requireAdmin,createAttendanceSession);
 router.put('/events/:eventId/sessions/:sessionId', authenticateToken, requireAdmin,toggleAttendanceSession);//toggle isActive
-router.put('/events/:eventId/sessions/:sessionId', authenticateToken, requireAdmin,updateAttendanceSession);//update entire session
+router.put('/events/sessions/:sessionId', authenticateToken, requireAdmin,updateAttendanceSession);//update entire session
 router.get('/events/:eventId/sessions/:sessionId', authenticateToken, requireAdmin,);//get the session for admin for the code
 router.get('/sessions/:sessionId/stats' , authenticateToken, requireAdmin,);
 router.get('/events/:eventId/attendance', authenticateToken, requireAdmin,);
