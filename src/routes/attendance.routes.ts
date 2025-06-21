@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import {  authenticateToken, requireAdmin, requireUser } from '../middlewares/auth.middleware';
-import { createAttendanceSession, toggleAttendanceSession, updateAttendanceSession } from 'src/controllers/attendance.controller';
+import { createAttendanceSession, toggleAttendanceSession, updateAttendanceSession } from '../controllers/attendance.controller';
 
 const router = Router();
 

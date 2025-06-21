@@ -83,6 +83,7 @@ model AttendanceSession {
   isActive    Boolean      @default(false)
   sessionName String
   code        String
+  location    String
   attendances Attendance[]
 }
 
