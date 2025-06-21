@@ -4,11 +4,12 @@ import { ApiResponse, EventData } from "./event.types";
 export interface AttendanceSession {
   id?: number;
   eventId: number;
-  startTime: Date;
+  startTime: Date ;
   endTime?: Date | null;
   isActive: boolean;
   sessionName: string;
   code: string;
+  location:string; // change
 }
 
 export interface AttendanceSessionWithEvent {
@@ -20,13 +21,16 @@ export interface AttendanceSessionWithEvent {
     sessionName: string;
     code: string;
     event : EventData;
+    location:string; 
 }
-
 
 export interface AttendanceSessionCreate{
     eventId : number;
-    startTime: Date;
+    startTime: Date|null;
+    endTime : Date|null;
+    location: string;
     sessionName: string;
+    
 }
 
 export interface AttendanceSessionToggleActive{
@@ -41,6 +45,7 @@ export interface AttendanceSessionUpdate{
     startTime?: Date;
     isActive?: boolean;
     sessionName?: string;
+    location:string; 
 }
 
 
@@ -51,6 +56,7 @@ export interface AttendanceSessionInput {
   endTime?: Date | null;
   isActive: boolean;
   sessionName: string;
+  location:string; 
 }
 
 export interface Attendance {
