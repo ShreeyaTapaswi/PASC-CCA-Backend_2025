@@ -31,7 +31,7 @@ if (!event) {
 
    const missingFields = [];
 if (!startTime) missingFields.push("startTime");
-if (!eventId) missingFields.push("eventId");
+// if (!eventId) missingFields.push("eventId");
 if (!location) missingFields.push("location");
 if (!sessionName) missingFields.push("sessionName");
 
@@ -41,16 +41,16 @@ if (missingFields.length > 0) {
 
  
   // Step 1: Check if an active session already exists for this event
-  const existing = await prisma.attendanceSession.findFirst({
-    where: {
-      eventId,
-      isActive: true,
-    },
-  });
+  // const existing = await prisma.attendanceSession.findFirst({
+  //   where: {
+  //     eventId,
+  //     isActive: true,
+  //   },
+  // });
 
-  if (existing) {
-    throw new Error("An active session already exists for this event.");
-  }
+  // if (existing) {
+  //   throw new Error("An active session already exists for this event.");
+  // }
 
   const code = crypto.randomBytes(4).toString("hex");
 
