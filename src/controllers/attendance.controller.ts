@@ -1,9 +1,11 @@
 import { AttendanceSession } from '@prisma/client';
 import { Request, Response } from 'express';
 import { AttendanceResponse, AttendanceSessionResponse } from '../types/attendance.types';
-import { createSessionService ,updateSessionService} from '../services/attendance.service'; 
-
-
+import {
+  createSessionService,
+  updateSessionService,
+  getSessionStatisticsService,
+} from '../services/attendance.service';
 
 /**
  * @swagger
@@ -248,7 +250,6 @@ export const updateAttendanceSession = async (
   }
 };
 
-
 export const toggleAttendanceSession = async(req : Request , res : Response) : Promise<AttendanceSessionResponse>=>{
     res.status(501).json({
         message: 'Not Implemented'
@@ -269,15 +270,139 @@ export const getAttendanceSession = async(req : Request , res : Response) : Prom
     };
 }
 
-export const getAttendanceSessionStats = async(req : Request , res : Response) : Promise<AttendanceSessionResponse>=>{
-    res.status(501).json({
-        message: 'Not Implemented'
+/**
+ * @swagger
+ * /api/attendance/sessions/{sessionId}/stats:
+ *   get:
+ *     summary: Get session statistics (Admin Only)
+ *     description: Retrieve detailed statistics for a specific attendance session including total attendees, attendance rate, and attendance list
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: sessionId
+ *         in: path
+ *         required: true
+ *         description: ID of the attendance session
+ *         schema:
+ *           type: integer
+ *           example: 123
+ *     responses:
+ *       200:
+ *         description: Session statistics retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     sessionId:
+ *                       type: string
+ *                       description: The session ID
+ *                       example: "123"
+ *                     totalAttendees:
+ *                       type: number
+ *                       description: Total number of attendees who checked in
+ *                       example: 25
+ *                     attendanceRate:
+ *                       type: number
+ *                       description: Attendance rate as a percentage
+ *                       example: 83.33
+ *                     attendanceList:
+ *                       type: array
+ *                       description: List of attendees with their check-in details
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           userId:
+ *                             type: string
+ *                             description: User ID
+ *                             example: "456"
+ *                           name:
+ *                             type: string
+ *                             description: User's full name
+ *                             example: "John Doe"
+ *                           checkInTime:
+ *                             type: string
+ *                             format: date-time
+ *                             description: When the user checked in
+ *                             example: "2024-01-15T09:15:00.000Z"
+ *       400:
+ *         description: Bad request - Invalid session ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Invalid session ID."
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden - Admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Session not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: "Session with ID 123 not found."
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+export const getAttendanceSessionStats = async (
+  req: Request,
+  res: Response
+): Promise<void> => {
+  try {
+    const sessionId = parseInt(req.params.sessionId, 10);
+
+    if (isNaN(sessionId)) {
+      res.status(400).json({ success: false, message: 'Invalid session ID.' });
+      return;
+    }
+
+    const stats = await getSessionStatisticsService(sessionId);
+
+    res.status(200).json(stats);
+  } catch (error) {
+    res.status(404).json({
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to get session statistics.',
     });
-    return {
-        success: false,
-        message: 'Not Implemented'
-    };
-}
+  }
+};
 
 export const markAttendanceForSession = async(req : Request , res : Response) : Promise<AttendanceResponse>=>{
     res.status(501).json({
