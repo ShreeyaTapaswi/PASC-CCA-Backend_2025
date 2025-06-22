@@ -58,8 +58,8 @@ if (missingFields.length > 0) {
   const session = await prisma.attendanceSession.create({
     data: {
       eventId,
-      startTime: new Date(startTime),
-      endTime: endTime ? new Date(endTime) : null,
+      startTime: startTime ? new Date(startTime) : undefined,
+      endTime: endTime ? new Date(endTime) : undefined,
       isActive: true,
       code,
       location,
@@ -116,8 +116,8 @@ export const updateSessionService = async (
   const updatedSession = await prisma.attendanceSession.update({
     where: { id: sessionId },
     data: {
-      startTime: startTime ? new Date(startTime) : null, 
-      endTime: endTime ? new Date(endTime) : null, 
+      startTime: startTime ? new Date(startTime) : undefined, 
+      endTime: endTime ? new Date(endTime) : undefined, 
       location,
       sessionName,
     },
@@ -135,6 +135,95 @@ export const updateSessionService = async (
       location: updatedSession.location,
       code: updatedSession.code,
       isActive: updatedSession.isActive,
+    },
+  };
+};
+
+export const getSessionStatisticsService = async (sessionId: number) => {
+  // 1. Find the session
+  const session = await prisma.attendanceSession.findUnique({
+    where: { id: sessionId },
+    include: {
+      event: {
+        select: {
+          capacity: true,
+        },
+      },
+    },
+  });
+
+  if (!session) {
+    throw new Error(`Session with ID ${sessionId} not found.`);
+  }
+
+  // 2. Get attendance records and count
+  const attendanceRecords = await prisma.attendance.findMany({
+    where: { sessionId: sessionId },
+    include: {
+      user: {
+        select: {
+          id: true,
+          name: true,
+        },
+      },
+    },
+    orderBy: {
+      attendedAt: 'asc',
+    },
+  });
+
+  const totalAttendees = attendanceRecords.length;
+
+  // 3. Get total expected attendees from the event capacity
+  const totalExpectedAttendees = session.event.capacity || totalAttendees;
+
+  // 4. Calculate attendance rate
+  const attendanceRate =
+    totalExpectedAttendees > 0
+      ? (totalAttendees / totalExpectedAttendees) * 100
+      : 0;
+
+  // 5. Format the attendance list
+  const attendanceList = attendanceRecords.map((record) => ({
+    userId: record.user.id.toString(),
+    name: record.user.name,
+    checkInTime: record.attendedAt.toISOString(),
+  }));
+
+  // 6. Return the statistics
+  return {
+    success: true,
+    data: {
+      sessionId: sessionId.toString(),
+      totalAttendees,
+      attendanceRate: parseFloat(attendanceRate.toFixed(2)),
+      attendanceList,
+    },
+  };
+};
+
+export const getAttendanceSessionService = async (
+  sessionId: number
+): Promise<AttendanceSessionResponse> => {
+  const session = await prisma.attendanceSession.findUnique({
+    where: { id: sessionId },
+  });
+
+  if (!session) {
+    throw new Error(`Attendance session with ID ${sessionId} does not exist.`);
+  }
+
+  return {
+    success: true,
+    message: 'Attendance session retrieved successfully',
+    data: {
+      eventId: session.eventId,
+      code: session.code,
+      startTime: session.startTime,
+      endTime: session.endTime,
+      location: session.location,
+      sessionName: session.sessionName,
+      isActive: session.isActive,
     },
   };
 };
