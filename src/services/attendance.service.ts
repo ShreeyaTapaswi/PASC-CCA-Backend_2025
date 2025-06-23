@@ -19,7 +19,7 @@ const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 export const createSessionService = async (eventId: number,data: AttendanceSessionCreate): Promise<AttendanceSessionResponse> => {
-  const { startTime, endTime, location,sessionName } = data;
+  const { startTime, endTime, location,sessionName,isActive } = data;
    
     const event = await prisma.event.findUnique({
   where: { id: eventId },
@@ -31,7 +31,7 @@ if (!event) {
 
    const missingFields = [];
 if (!startTime) missingFields.push("startTime");
-// if (!eventId) missingFields.push("eventId");
+
 if (!location) missingFields.push("location");
 if (!sessionName) missingFields.push("sessionName");
 
@@ -39,40 +39,25 @@ if (missingFields.length > 0) {
   throw new Error(`Missing the required field(s): ${missingFields.join(", ")}`);
 }
 
- 
-  // Step 1: Check if an active session already exists for this event
-  // const existing = await prisma.attendanceSession.findFirst({
-  //   where: {
-  //     eventId,
-  //     isActive: true,
-  //   },
-  // });
-
-  // if (existing) {
-  //   throw new Error("An active session already exists for this event.");
-  // }
-
   const code = crypto.randomBytes(4).toString("hex");
 
-  // Step 3: Create session
   const session = await prisma.attendanceSession.create({
     data: {
       eventId,
       startTime: startTime ? new Date(startTime) : undefined,
       endTime: endTime ? new Date(endTime) : undefined,
-      isActive: true,
+      isActive: typeof isActive === 'boolean' ? isActive : undefined,
       code,
       location,
       sessionName
     },
   });
 
-  // Step 4: Return response data
   return {
     success : true,
     message: 'attendance session created successfully',
     data:{
-    // id: session.id.toString(),
+    id: session.id,
     eventId: session.eventId,
     code: session.code,
     startTime:  session.startTime,
@@ -90,9 +75,8 @@ export const updateSessionService = async (
   sessionId: number,
   data: AttendanceSessionCreate
 ): Promise<AttendanceSessionResponse> => {
-  const { startTime, endTime, location, sessionName } = data;
+  const { startTime, endTime, location, sessionName, isActive} = data;
 
-  // 1️⃣ Find the session by ID
   const session = await prisma.attendanceSession.findUnique({
     where: { id: sessionId },
   });
@@ -101,29 +85,17 @@ export const updateSessionService = async (
     throw new Error(`Attendance session with ID ${sessionId} does not exist.`);
   }
 
-  // 2️⃣ Validate required fields
-  const missingFields = [];
-  if (!startTime) missingFields.push("startTime");
-  if (!location) missingFields.push("location");
-  if (!sessionName) missingFields.push("sessionName");
-  if (!endTime) missingFields.push("endTime");
+const updatedSession = await prisma.attendanceSession.update({
+  where: { id: sessionId },
+  data: {
+    startTime: startTime ? new Date(startTime) : undefined,
+    endTime: endTime ? new Date(endTime) : undefined,
+    location: location !== undefined ? location : undefined,
+    sessionName: sessionName !== undefined ? sessionName : undefined,
+    isActive: typeof isActive === 'boolean' ? isActive : undefined,
+  },
+});
 
-  if (missingFields.length > 0) {
-    throw new Error(`Missing the required field(s): ${missingFields.join(", ")}`);
-  }
-
-  // 3️⃣ Update session (only allowed fields)
-  const updatedSession = await prisma.attendanceSession.update({
-    where: { id: sessionId },
-    data: {
-      startTime: startTime ? new Date(startTime) : undefined, 
-      endTime: endTime ? new Date(endTime) : undefined, 
-      location,
-      sessionName,
-    },
-  });
-
-  // 4️⃣ Return full data including code & isActive from updated record
   return {
     success: true,
     message: "Attendance session updated successfully",
@@ -138,7 +110,7 @@ export const updateSessionService = async (
     },
   };
 };
-
+/////////////////////////////////////////////////////////////////////////////////////////////
 export const getSessionStatisticsService = async (sessionId: number) => {
   // 1. Find the session
   const session = await prisma.attendanceSession.findUnique({
@@ -201,7 +173,7 @@ export const getSessionStatisticsService = async (sessionId: number) => {
     },
   };
 };
-
+///////////////////////////////////////////////////////////////////////////////////////////////////
 export const getAttendanceSessionService = async (
   sessionId: number
 ): Promise<AttendanceSessionResponse> => {
@@ -227,3 +199,65 @@ export const getAttendanceSessionService = async (
     },
   };
 };
+///////////////////////////////////////////////////////////////////////////////////////////////////
+export const markSession= async (
+  userId: number,sessionId: number,code:string,eventId:number
+)=> {
+ 
+    const event = await prisma.event.findUnique({
+    where: { id: eventId },
+  });
+
+  if (!event) {
+    throw new Error("Event not found");
+  }
+  //have to check session id is active or not 
+ const session = await prisma.attendanceSession.findUnique({
+  where: { id: sessionId },
+  select: { code: true, isActive: true },
+});
+
+
+  if (!session) {
+    throw new Error("Session not found");
+  }
+
+  if (!session.isActive) {
+    throw new Error("Session is not active");
+  }
+
+  console.log(session.code);
+  console.log(code);
+  if (session.code !== code) {
+    throw new Error("Invalid session code");
+  }
+
+const attendance = await prisma.attendance.create({
+  data: {
+    userId: userId,
+    sessionId: sessionId,
+  },
+});
+
+ return {
+    success: true,
+    message: "Attendance marked successfully",
+    data: attendance,
+  };
+  }
+
+
+//   return {
+//     success: true,
+//     message: "Attendance session updated successfully",
+//     data: {
+//       eventId: updatedSession.eventId,
+//       sessionName: updatedSession.sessionName,
+//       startTime: updatedSession.startTime,
+//       endTime: updatedSession.endTime,
+//       location: updatedSession.location,
+//       code: updatedSession.code,
+//       isActive: updatedSession.isActive,
+//     },
+//   };
+// };

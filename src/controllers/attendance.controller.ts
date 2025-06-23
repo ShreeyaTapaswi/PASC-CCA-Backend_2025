@@ -5,6 +5,7 @@ import {
   createSessionService,
   updateSessionService,
   getSessionStatisticsService,
+  markSession,
 } from '../services/attendance.service';
 
 /**
@@ -32,6 +33,7 @@ import {
  *               - sessionName
  *               - location
  *               - startTime
+ *               - isActive
  *             properties:
  *               sessionName:
  *                 type: string
@@ -48,6 +50,10 @@ import {
  *                 format: date-time
  *                 nullable: true
  *                 example: "2025-06-22T10:30:00.000Z"
+ *               isActive:
+ *                 type: boolean
+ *                 example: true
+
  *     responses:
  *       201:
  *         description: Attendance session created successfully
@@ -110,6 +116,7 @@ export const createAttendanceSession = async (
   try {
     const eventId = parseInt(req.params.eventId);
     const sessionData = req.body;
+
      if (isNaN(eventId)) {
       res.status(400).json({ success: false, message: 'Invalid event ID' });
       return;
@@ -143,7 +150,7 @@ export const createAttendanceSession = async (
  *         description: ID of the session
  *         schema:
  *           type: integer
- *     requestBody:
+  *     requestBody:
  *       required: true
  *       content:
  *         application/json:
@@ -153,7 +160,7 @@ export const createAttendanceSession = async (
  *               - sessionName
  *               - location
  *               - startTime
- *               - endTime
+ *               - isActive
  *             properties:
  *               sessionName:
  *                 type: string
@@ -170,6 +177,9 @@ export const createAttendanceSession = async (
  *                 format: date-time
  *                 nullable: true
  *                 example: "2025-06-22T10:30:00.000Z"
+ *               isActive:
+ *                 type: boolean
+ *                 example: true
  *     responses:
  *       201:
  *         description: Attendance session updated successfully
@@ -250,25 +260,25 @@ export const updateAttendanceSession = async (
   }
 };
 
-export const toggleAttendanceSession = async(req : Request , res : Response) : Promise<AttendanceSessionResponse>=>{
-    res.status(501).json({
-        message: 'Not Implemented'
-    });
-    return {
-        success: false,
-        message: 'Not Implemented'
-    };
-}
+// export const toggleAttendanceSession = async(req : Request , res : Response) : Promise<AttendanceSessionResponse>=>{
+//     res.status(501).json({
+//         message: 'Not Implemented'
+//     });
+//     return {
+//         success: false,
+//         message: 'Not Implemented'
+//     };
+// }
 
-export const getAttendanceSession = async(req : Request , res : Response) : Promise<AttendanceSessionResponse>=>{
-    res.status(501).json({
-        message: 'Not Implemented'
-    });
-    return {
-        success: false,
-        message: 'Not Implemented'
-    };
-}
+// export const getAttendanceSession = async(req : Request , res : Response) : Promise<AttendanceSessionResponse>=>{
+//     res.status(501).json({
+//         message: 'Not Implemented'
+//     });
+//     return {
+//         success: false,
+//         message: 'Not Implemented'
+//     };
+// }
 
 /**
  * @swagger
@@ -403,13 +413,114 @@ export const getAttendanceSessionStats = async (
     });
   }
 };
+/**
+ * @swagger
+ * /api/attendance/events/{eventId}/sessions/{sessionId}/attend:
+ *   post:
+ *     summary: Mark attendance for a user in a specific session
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         description: ID of the event
+ *         schema:
+ *           type: integer
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         description: ID of the session to mark attendance for
+ *         schema:
+ *           type: integer
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - code
+ *             properties:
+ *               code:
+ *                 type: string
+ *                 example: "a1b2c3d4"
+ *     responses:
+ *       200:
+ *         description: Attendance marked successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Attendance marked successfully
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: integer
+ *                       example: 101
+ *                     userId:
+ *                       type: integer
+ *                       example: 5
+ *                     sessionId:
+ *                       type: integer
+ *                       example: 12
+ *                     attendedAt:
+ *                       type: string
+ *                       format: date-time
+ *                       example: "2025-06-23T10:00:00.000Z"
+ *       400:
+ *         description: Bad request (invalid session, code mismatch, or already marked)
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: false
+ *                 message:
+ *                   type: string
+ *                   example: Invalid session code
+ *       401:
+ *         description: Unauthorized - User not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: User not authenticated
+ */
 
-export const markAttendanceForSession = async(req : Request , res : Response) : Promise<AttendanceResponse>=>{
-    res.status(501).json({
-        message: 'Not Implemented'
-    });
-    return {
-        success: false,
-        message: 'Not Implemented'
-    };
+
+export const markAttendanceForSession = async(req : Request , res : Response) : Promise<void>=>{
+  try{
+  const userId = req.user?.id;
+  const { code } = req.body; 
+  if (!userId) {
+     res.status(401).json({ message: "User not authenticated" });
+     return;
+  }
+  const sessionId = parseInt(req.params.sessionId);
+  const eventId = parseInt(req.params.eventId);
+  
+
+  const result = await markSession(userId, sessionId, code,eventId);
+   res.status(200).json(result);
+   return ;
+  } catch (error: any) {
+     res.status(400).json({ success: false, message: error.message });
+     return;
+  }
 }
+  
+
