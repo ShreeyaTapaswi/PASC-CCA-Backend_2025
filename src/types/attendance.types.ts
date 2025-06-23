@@ -30,7 +30,7 @@ export interface AttendanceSessionCreate{
     endTime : Date|null;
     location: string;
     sessionName: string;
-    
+    isActive:boolean;
 }
 
 export interface AttendanceSessionToggleActive{
