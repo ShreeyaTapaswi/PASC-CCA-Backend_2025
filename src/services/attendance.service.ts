@@ -212,24 +212,41 @@ export const markSession= async (
     throw new Error("Event not found");
   }
   //have to check session id is active or not 
- const session = await prisma.attendanceSession.findUnique({
-  where: { id: sessionId },
-  select: { code: true, isActive: true },
+const session = await prisma.attendanceSession.findFirst({
+  where: {
+    id: sessionId,
+    eventId: eventId, // Ensures the session belongs to this event
+  },
+  select: {
+    code: true,
+    isActive: true,
+  },
 });
 
-
-  if (!session) {
-    throw new Error("Session not found");
-  }
+if (!session) {
+  throw new Error(`Session ID ${sessionId} does not belong to Event ID ${eventId}`);
+}
 
   if (!session.isActive) {
     throw new Error("Session is not active");
   }
-
-  console.log(session.code);
-  console.log(code);
+ 
+  // console.log(session.code);
+  // console.log(code);
   if (session.code !== code) {
     throw new Error("Invalid session code");
+  }
+
+  
+  const alreadyMarked = await prisma.attendance.findFirst({
+    where: {
+      userId,
+      sessionId,
+    },
+  });
+
+  if (alreadyMarked) {
+    throw new Error("Attendance already marked");
   }
 
 const attendance = await prisma.attendance.create({
