@@ -12,7 +12,8 @@ import {
   Attendance,
   AttendanceResponse,
   AttendanceSessionResponse,
-  AttendanceSessionWithEventResponse
+  AttendanceSessionWithEventResponse,
+  AttendanceUserEventSessionStatsResponse
 } from '../types/attendance.types';
 
 const prisma = new PrismaClient();
@@ -261,3 +262,64 @@ const attendance = await prisma.attendance.create({
 //     },
 //   };
 // };
+
+
+export const getUserAttendanceSessionStatsService = async (userId : number , eventId : number) : Promise<AttendanceUserEventSessionStatsResponse> => {
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+  });
+
+  if (!event) {
+    throw new Error(`Event with ID ${eventId} does not exist.`);
+  }
+
+  const attendanceSessions = await prisma.attendanceSession.findMany({
+    where: { eventId: eventId },
+  });
+
+
+  if (attendanceSessions.length === 0) {
+    return {
+      success: true,
+      message: "No attendance sessions found for this event.",
+      data: [],
+    };
+  }
+  const attendanceRecords = await prisma.attendance.findMany({
+    where: {
+      userId: userId,
+      sessionId: {
+        in: attendanceSessions.map((session) => session.id),
+      },
+    },
+    select: {
+      sessionId: true,
+    },
+  });
+
+  // Create a Set for fast lookup
+  const presentSessionIds = new Set(attendanceRecords.map(record => record.sessionId));
+
+  // Construct the result
+  const sessionStats = attendanceSessions.map(session => ({
+    sessionId: session.id,
+    eventId: session.eventId,
+    startTime: session.startTime,
+    endTime: session.endTime,
+    code: session.code,
+    location: session.location,
+    sessionName: session.sessionName,
+    present: presentSessionIds.has(session.id)
+  }));
+
+  console.log(sessionStats);
+
+  return {
+    success: true,
+    message: "Attendance session stats fetched successfully.",
+    data: sessionStats,
+  };
+
+
+  
+}
