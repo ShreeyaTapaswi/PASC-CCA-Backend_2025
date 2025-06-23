@@ -93,110 +93,65 @@ const options: swaggerJsdoc.Options = {
             updatedAt: { type: 'string', format: 'date-time' },
           },
         },
-        EventResponse: {
+        AttendanceSession: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time', nullable: true },
+            isActive: { type: 'boolean' },
+            sessionName: { type: 'string' },
+            code: { type: 'string' },
+          },
+        },
+        Attendance: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            userId: { type: 'integer' },
+            sessionId: { type: 'integer' },
+            attendedAt: { type: 'string', format: 'date-time' },
+            user: { $ref: '#/components/schemas/User' },
+            session: { $ref: '#/components/schemas/AttendanceSession' },
+          },
+        },
+        AttendanceResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/Attendance' },
+          },
+        },
+        // 👇 Your new custom schema for the stats
+        UserEventSessionStats: {
+          type: 'object',
+          properties: {
+            sessionId: { type: 'integer' },
+            sessionName: { type: 'string' },
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time', nullable: true },
+            code: { type: 'string' },
+            location: { type: 'string' },
+            present: { type: 'boolean' },
+          },
+        },
+        AttendanceUserEventSessionStatsResponse: {
           type: 'object',
           properties: {
             success: { type: 'boolean' },
             message: { type: 'string' },
-            data: { $ref: '#/components/schemas/Event' },
-          },
-        },
-        Pagination: {
-          type: 'object',
-          properties: {
-            total: { type: 'integer' },
-            page: { type: 'integer' },
-            limit: { type: 'integer' },
-            pages: { type: 'integer' },
-          },
-        },
-        PaginatedEventData: {
-          type: 'object',
-          properties: {
-            events: {
+            data: {
               type: 'array',
-              items: { $ref: '#/components/schemas/Event' },
+              items: { $ref: '#/components/schemas/UserEventSessionStats' },
             },
-            pagination: { $ref: '#/components/schemas/Pagination' },
-          },
-        },
-        PaginatedEventResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: { $ref: '#/components/schemas/PaginatedEventData' },
-          },
-        },
-        Rsvp: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer' },
-            eventId: { type: 'integer' },
-            userId: { type: 'integer' },
-            status: {
-              type: 'string',
-              enum: ['ATTENDING', 'NOT_ATTENDING'],
-            },
-          },
-        },
-        RsvpResponse: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer' },
-            eventId: { type: 'integer' },
-            userId: { type: 'integer' },
-            status: {
-              type: 'string',
-              enum: ['ATTENDING', 'NOT_ATTENDING'],
-            },
-            createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' },
-          },
-        },
-        RsvpWithEvents: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer' },
-            eventId: { type: 'integer' },
-            userId: { type: 'integer' },
-            status: {
-              type: 'string',
-              enum: ['ATTENDING', 'NOT_ATTENDING'],
-            },
-            event: { $ref: '#/components/schemas/Event' },
-          },
-        },
-        RsvpWithUser: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer' },
-            eventId: { type: 'integer' },
-            userId: { type: 'integer' },
-            status: {
-              type: 'string',
-              enum: ['ATTENDING', 'NOT_ATTENDING'],
-            },
-            user: { $ref: '#/components/schemas/User' },
-          },
-        },
-        RsvpAndEventResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: { $ref: '#/components/schemas/RsvpWithEvents' },
-          },
-        },
-        RsvpAndUserResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: { $ref: '#/components/schemas/RsvpWithUser' },
           },
         },
       },
     },
   },
-  apis: ['./src/controllers/*.ts'], // Adjust as needed
+  apis: ['./src/controllers/*.ts'], // adjust as needed
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

@@ -7,6 +7,7 @@ import { swaggerSpec } from './config/swagger';
 import authRoutes from './routes/auth.routes';
 import eventRoutes from './routes/event.routes';
 import rsvpRoutes from './routes/rsvp.routes';
+import attendanceRoutes from './routes/attendance.routes';
 import dotenv from 'dotenv';
 import { 
   registerUser, 
@@ -51,6 +52,7 @@ app.get('/api/auth/admin/me', authenticateToken, requireAdmin, getCurrentAdmin);
 app.use('/api/auth', authRoutes);
 app.use('/api/events' , eventRoutes);
 app.use('/api/rsvps', rsvpRoutes);
+app.use('/api/attendance', attendanceRoutes);
 const PORT = process.env.PORT || 3000;
 
 app.listen(PORT, () => {
