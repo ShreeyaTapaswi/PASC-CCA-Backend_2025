@@ -6,6 +6,7 @@ import {
   updateSessionService,
   getSessionStatisticsService,
   markSession,
+  getUserAttendanceSessionStatsService,
 } from '../services/attendance.service';
 
 /**
@@ -523,4 +524,59 @@ export const markAttendanceForSession = async(req : Request , res : Response) : 
   }
 }
   
-
+/**
+ * @swagger
+ * /api/attendance/events/{eventId}/sessions/attendance:
+ *   get:
+ *     summary: Get user attendance session statistics for a specific event
+ *     tags:
+ *       - Attendance
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the event to fetch attendance sessions for
+ *     responses:
+ *       200:
+ *         description: Attendance session stats fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AttendanceUserEventSessionStatsResponse'
+ *       401:
+ *         description: Unauthorized - user is not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Event or attendance session not found
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+export const getUserAttendanceSessionStats = async(req : Request , res : Response) : Promise<void>=>{
+  const userId = req.user?.id;
+  const eventId = parseInt(req.params.eventId);
+  if (!userId) {
+    res.status(401).json({ message: "User not authenticated" });
+    return;
+  }
+  try {
+    const stats = await getUserAttendanceSessionStatsService(userId , eventId);
+    res.status(200).json(stats);
+  } catch (error) {
+    res.status(404).json({
+      success: false,
+      message:
+        error instanceof Error
+          ? error.message
+          : 'Failed to get user session statistics.',
+    });
+  }
+}

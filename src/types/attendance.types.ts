@@ -68,8 +68,20 @@ export interface Attendance {
   attendedAt: Date;
 }
 
+export interface UserEventSessionStats{
+  sessionId : number;
+  sessionName: string;
+  eventId: number;
+  startTime: Date;
+  endTime: Date | null;
+  code: string;
+  location: string;
+  present: boolean;
+}
+
 
 
 export type AttendanceResponse = ApiResponse<Attendance>;
 export type AttendanceSessionResponse = ApiResponse<AttendanceSession>;
 export type AttendanceSessionWithEventResponse = ApiResponse<AttendanceSessionWithEvent>;
+export type AttendanceUserEventSessionStatsResponse = ApiResponse<UserEventSessionStats>;
