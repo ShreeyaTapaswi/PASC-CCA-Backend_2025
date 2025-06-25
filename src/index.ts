@@ -33,6 +33,14 @@ app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
+app.use((req, res, next) => {
+  res.setHeader(
+    "Content-Security-Policy",
+    "default-src 'self'; connect-src 'self' http://localhost:3000 https://pasc-cca-backend-2025.onrender.com"
+  );
+  next();
+});
+
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
