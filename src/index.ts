@@ -54,9 +54,17 @@ app.use('/api/events' , eventRoutes);
 app.use('/api/rsvps', rsvpRoutes);
 app.use('/api/attendance', attendanceRoutes);
 const PORT = process.env.PORT || 3000;
-
+async function connectDB() {
+  try {
+    await prisma.$connect();
+    console.log("🟢 Database connected successfully!");
+  } catch (error) {
+    console.error("🔴 Database connection failed:", error);
+    process.exit(1); // Exit process if DB connection fails
+  }
+}
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+  console.log(`API Documentation available at https://localhost:${PORT}/api-docs`);
   console.log("Database_url :" , process.env.DATABASE_URL) ;
 }); 
