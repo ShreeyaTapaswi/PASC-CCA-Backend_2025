@@ -10,7 +10,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        url: 'http://localhost:3000',
+        url: 'https://pasc-cca-backend-2025.onrender.com',
         description: 'Development server',
       },
     ],
