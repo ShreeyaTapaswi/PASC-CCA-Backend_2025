@@ -73,6 +73,6 @@ async function connectDB() {
 }
 app.listen(PORT, () => {
   console.log(`Server is running on port ${PORT}`);
-  console.log(`API Documentation available at https://localhost:${PORT}/api-docs`);
+  console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
   console.log("Database_url :" , process.env.DATABASE_URL) ;
 }); 
