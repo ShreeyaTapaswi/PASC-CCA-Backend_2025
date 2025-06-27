@@ -224,3 +224,25 @@ export const getEventByIdPublic = async (id: number): Promise<EventResponse> => 
     }
 };
 
+
+//Filter by event status 
+export const fetchEventByStatus = async (status : 'UPCOMING' | 'ONGOING' | 'COMPLETED') => {
+    try {
+        const events = await prisma.event.findMany({
+            where : {status} ,
+            orderBy : {startDate : 'asc'}
+        }) ;
+
+        return {
+            success : true ,
+            message : `Events with status ${status} fetched successfully` ,
+            data : events
+        };
+    } catch(error) {
+        return {
+            success : false ,
+            message : 'Failed to fetch events by status' ,
+            error : error instanceof Error ? error.message : 'Unknown error'
+        } ;
+    }
+};
