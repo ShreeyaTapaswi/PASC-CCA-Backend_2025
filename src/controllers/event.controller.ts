@@ -1,5 +1,5 @@
 import { EventInput, EventResponse } from "src/types/event.types";
-import { deleteEventById, fetchAllEvents, getEventByIdPublic, getEventsAdmin, postEvent, updateEventService } from "../services/event.service";
+import { deleteEventById, fetchAllEvents, getEventByIdPublic, getEventsAdmin, postEvent, updateEventService , fetchEventByStatus } from "../services/event.service";
 
 import { Request, Response } from "express";
 
@@ -442,3 +442,68 @@ export const getEventById = async (req: Request, res: Response): Promise<void> =
 // export const getUserRsvpForEvent = async (req: Request, res: Response): Promise<void> => {
 //    res.status(200).json({ message: "User RSVP for event fetched successfully" });
 // }
+/**
+ * @swagger
+ * /api/events/filter:
+ *   get:
+ *     summary: Get events by status (UPCOMING, ONGOING, COMPLETED)
+ *     tags: [Events]
+ *     parameters:
+ *       - in: query
+ *         name: status
+ *         schema:
+ *           type: string
+ *           enum: [UPCOMING, ONGOING, COMPLETED]
+ *         required: true
+ *         description: Filter events based on their status
+ *     responses:
+ *       200:
+ *         description: Events filtered by status fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Events fetched successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     $ref: '#/components/schemas/EventResponse'
+ *       400:
+ *         description: Invalid or missing status query parameter
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal server error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+
+export const getEventsByStatus = async (req: Request , res : Response) :Promise<void> => {
+  const {status} = req.query ;
+
+  if(!['UPCOMING' , 'ONGOING' , 'COMPLETED'].includes(status as string)){
+    res.status(400).json({success : false , message : 'Invalid status query'}) ;
+    return ;
+  }
+
+  try {
+    const result = await fetchEventByStatus(status as 'UPCOMING' | 'ONGOING' | 'COMPLETED') ;
+    res.status(200).json(result) ;
+  }catch(error) {
+    res.status(500).json({
+      success : false ,
+      message : 'Server error' ,
+      error : error instanceof Error ? error.message : 'Unexpected error'
+    });
+  }
+};
