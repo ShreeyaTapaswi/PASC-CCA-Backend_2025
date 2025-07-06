@@ -86,7 +86,9 @@ model AttendanceSession {
   sessionName String
   code        String
   location    String
+  credits     Int         @default(0)
   attendances Attendance[]
+
 }
 
 model Attendance {

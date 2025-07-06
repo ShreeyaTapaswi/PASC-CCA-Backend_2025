@@ -11,6 +11,7 @@ const options: swaggerJsdoc.Options = {
     servers: [
       {
         url: 'https://pasc-cca-backend-2025.onrender.com',
+        // url:'http://localhost:3000/',
         description: 'Development server',
       },
     ],
@@ -23,45 +24,109 @@ const options: swaggerJsdoc.Options = {
         },
       },
       schemas: {
-        User: {
+        AttendanceSession: {
           type: 'object',
           properties: {
             id: { type: 'integer' },
-            name: { type: 'string' },
-            email: { type: 'string', format: 'email' },
-            department: {
-              type: 'string',
-              enum: ['CE', 'IT', 'ENTC', 'ECE', 'AIDS'],
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time', nullable: true },
+            isActive: { type: 'boolean' },
+            sessionName: { type: 'string' },
+            code: { type: 'string' },
+            location: { type: 'string' },
+            credits: { type: 'integer' },
+          },
+        },
+        AttendanceSessionWithEvent: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time', nullable: true },
+            isActive: { type: 'boolean' },
+            sessionName: { type: 'string' },
+            code: { type: 'string' },
+            location: { type: 'string' },
+            credits: { type: 'integer' },
+            event: { $ref: '#/components/schemas/Event' },
+          },
+        },
+        UserPersonalBest: {
+          type: 'object',
+          properties: {
+            sessionId: { type: 'integer' },
+            userId: { type: 'integer' },
+            credits: { type: 'integer' },
+          },
+        },
+        UserAttendanceStats: {
+          type: 'object',
+          properties: {
+            sessionsAttended: { type: 'integer' },
+            sessions: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/AttendanceSession' },
             },
-            year: { type: 'integer' },
-            passoutYear: { type: 'integer' },
-            roll: { type: 'integer' },
-            hours: { type: 'number' },
-            createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' },
+            totalCredits: { type: 'number' },
+            completionRate: { type: 'number' },
+            userPersonalBest: { $ref: '#/components/schemas/UserPersonalBest' },
           },
         },
-        Admin: {
+        UserEventSessionStats: {
+          type: 'object',
+          properties: {
+            sessionId: { type: 'integer' },
+            sessionName: { type: 'string' },
+            eventId: { type: 'integer' },
+            startTime: { type: 'string', format: 'date-time' },
+            endTime: { type: 'string', format: 'date-time', nullable: true },
+            code: { type: 'string' },
+            location: { type: 'string' },
+            present: { type: 'boolean' },
+            credits: { type: 'integer' },
+          },
+        },
+        Attendance: {
           type: 'object',
           properties: {
             id: { type: 'integer' },
-            name: { type: 'string' },
-            email: { type: 'string', format: 'email' },
-            createdAt: { type: 'string', format: 'date-time' },
-            updatedAt: { type: 'string', format: 'date-time' },
+            userId: { type: 'integer' },
+            sessionId: { type: 'integer' },
+            attendedAt: { type: 'string', format: 'date-time' },
+            session: { $ref: '#/components/schemas/AttendanceSession' },
           },
         },
-        AuthResponse: {
+        AttendanceResponse: {
           type: 'object',
           properties: {
             success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/Attendance' },
+          },
+        },
+        AttendanceSessionResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/AttendanceSession' },
+          },
+        },
+        AttendanceSessionWithEventResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/AttendanceSessionWithEvent' },
+          },
+        },
+        AttendanceUserEventSessionStatsResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
             data: {
-              type: 'object',
-              properties: {
-                user: { $ref: '#/components/schemas/User' },
-                admin: { $ref: '#/components/schemas/Admin' },
-                token: { type: 'string' },
-              },
+              type: 'array',
+              items: { $ref: '#/components/schemas/UserEventSessionStats' },
             },
           },
         },
@@ -93,65 +158,10 @@ const options: swaggerJsdoc.Options = {
             updatedAt: { type: 'string', format: 'date-time' },
           },
         },
-        AttendanceSession: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer' },
-            eventId: { type: 'integer' },
-            startTime: { type: 'string', format: 'date-time' },
-            endTime: { type: 'string', format: 'date-time', nullable: true },
-            isActive: { type: 'boolean' },
-            sessionName: { type: 'string' },
-            code: { type: 'string' },
-          },
-        },
-        Attendance: {
-          type: 'object',
-          properties: {
-            id: { type: 'integer' },
-            userId: { type: 'integer' },
-            sessionId: { type: 'integer' },
-            attendedAt: { type: 'string', format: 'date-time' },
-            user: { $ref: '#/components/schemas/User' },
-            session: { $ref: '#/components/schemas/AttendanceSession' },
-          },
-        },
-        AttendanceResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            data: { $ref: '#/components/schemas/Attendance' },
-          },
-        },
-        // 👇 Your new custom schema for the stats
-        UserEventSessionStats: {
-          type: 'object',
-          properties: {
-            sessionId: { type: 'integer' },
-            sessionName: { type: 'string' },
-            eventId: { type: 'integer' },
-            startTime: { type: 'string', format: 'date-time' },
-            endTime: { type: 'string', format: 'date-time', nullable: true },
-            code: { type: 'string' },
-            location: { type: 'string' },
-            present: { type: 'boolean' },
-          },
-        },
-        AttendanceUserEventSessionStatsResponse: {
-          type: 'object',
-          properties: {
-            success: { type: 'boolean' },
-            message: { type: 'string' },
-            data: {
-              type: 'array',
-              items: { $ref: '#/components/schemas/UserEventSessionStats' },
-            },
-          },
-        },
       },
     },
   },
-  apis: ['./src/controllers/*.ts'], // adjust as needed
+  apis: ['./src/controllers/*.ts'], // adjust this to match your controllers location
 };
 
 export const swaggerSpec = swaggerJsdoc(options);

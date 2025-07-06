@@ -1,16 +1,18 @@
 import { PrismaClient } from '@prisma/client';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import { 
-  IUser, 
-  IAdmin, 
-  IUserCreate, 
-  IAdminCreate, 
-  IUserLogin, 
-  IAdminLogin, 
+
+import {
+  IUser,
+  IAdmin,
+  IUserCreate,
+  IAdminCreate,
+  IUserLogin,
+  IAdminLogin,
   IAuthResponse,
-  ITokenPayload 
+  ITokenPayload
 } from '../types/auth.types';
+import { PassThrough } from 'stream';
 
 const prisma = new PrismaClient();
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
@@ -63,7 +65,7 @@ const createTokenWithRetry = async (
 // User Authentication Functions
 export const createUser = async (userData: IUserCreate): Promise<IAuthResponse> => {
   const hashedPassword = await hashPassword(userData.password);
-  
+
   const user = await prisma.user.create({
     data: {
       ...userData,
@@ -74,11 +76,20 @@ export const createUser = async (userData: IUserCreate): Promise<IAuthResponse> 
 
   const payload: ITokenPayload = { id: user.id, email: user.email, type: 'user' };
   const token = generateToken(payload);
-  
+
   await createTokenWithRetry(token, user.id, undefined, payload);
 
   return {
-    user,
+    user: {
+      id: user.id,
+      name: user.name ?? "",
+      email: user.email,
+      department: user.department, // ✅ now typed as prisma.Department
+      year: user.year,
+      passoutYear: user.passoutYear,
+      roll: user.roll,
+      hours: user.hours,
+    },
     token,
   };
 };
@@ -104,7 +115,16 @@ export const loginUser = async (credentials: IUserLogin): Promise<IAuthResponse>
   await createTokenWithRetry(token, user.id, undefined, payload);
 
   return {
-    user,
+    user: {
+      id: user.id,
+      name: user.name ?? "",
+      email: user.email,
+      department: user.department, // ✅ now typed as prisma.Department
+      year: user.year,
+      passoutYear: user.passoutYear,
+      roll: user.roll,
+      hours: user.hours,
+    },
     token,
   };
 };
@@ -112,7 +132,7 @@ export const loginUser = async (credentials: IUserLogin): Promise<IAuthResponse>
 // Admin Authentication Functions
 export const createAdmin = async (adminData: IAdminCreate): Promise<IAuthResponse> => {
   const hashedPassword = await hashPassword(adminData.password);
-  
+
   const admin = await prisma.admin.create({
     data: {
       ...adminData,
@@ -126,8 +146,12 @@ export const createAdmin = async (adminData: IAdminCreate): Promise<IAuthRespons
   await createTokenWithRetry(token, undefined, admin.id, payload);
 
   return {
-    admin,
-    token,
+    admin: {
+      id: admin.id,
+      name: admin.name !== null ? admin.name : "",
+      email: admin.email
+    },
+    token
   };
 };
 
@@ -151,9 +175,13 @@ export const loginAdmin = async (credentials: IAdminLogin): Promise<IAuthRespons
 
   await createTokenWithRetry(token, undefined, admin.id, payload);
 
-  return {
-    admin,
-    token,
+ return {
+    admin: {
+      id: admin.id,
+      name: admin.name !== null ? admin.name : "",
+      email: admin.email
+    },
+    token
   };
 };
 
@@ -180,13 +208,35 @@ export const logoutAdmin = async (token: string): Promise<void> => {
 
 // Get User/Admin by ID
 export const getUserById = async (id: number): Promise<IUser | null> => {
-  return prisma.user.findUnique({
+  const user = await  prisma.user.findUnique({
     where: { id },
   });
+  if(!user)
+  {
+    return null;
+  }
+  return  {
+      id: user.id,
+      name: user.name ?? "",
+      email: user.email,
+      department: user.department, // ✅ now typed as prisma.Department
+      year: user.year,
+      passoutYear: user.passoutYear,
+      roll: user.roll,
+      hours: user.hours,
+  }
 };
 
 export const getAdminById = async (id: number): Promise<IAdmin | null> => {
-  return prisma.admin.findUnique({
+  const admin = await prisma.admin.findUnique({
     where: { id },
   });
+  if(!admin){
+    return null;
+  }
+  return {
+      id: admin.id,
+      name: admin.name !== null ? admin.name : "",
+      email: admin.email
+    }
 }; 
