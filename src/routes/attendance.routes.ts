@@ -8,6 +8,7 @@ import {
 //   getAttendanceSession,
   markAttendanceForSession,
   getUserAttendanceSessionStats,
+  getUserStats,
 } from '../controllers/attendance.controller';
 
 const router = Router();
@@ -26,6 +27,6 @@ router.get('/events/:eventId/sessions', authenticateToken, requireAdmin,);//get 
 // /events/:eventId/sessions/:sessionId/attend
 router.post('/events/:eventId/sessions/:sessionId/attend', authenticateToken, requireUser,markAttendanceForSession);
 router.get('/events/:eventId/sessions/attendance', authenticateToken, requireUser, getUserAttendanceSessionStats);//get all sessions for an event
-
+router.get('/user-attendance-stats' , authenticateToken , requireUser , getUserStats)
 
 export default router; 

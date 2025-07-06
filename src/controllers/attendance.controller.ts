@@ -7,6 +7,7 @@ import {
   getSessionStatisticsService,
   markSession,
   getUserAttendanceSessionStatsService,
+  getUserAttendanceStats,
 } from '../services/attendance.service';
 
 /**
@@ -578,5 +579,60 @@ export const getUserAttendanceSessionStats = async(req : Request , res : Respons
           ? error.message
           : 'Failed to get user session statistics.',
     });
+  }
+}
+
+/**
+ * @swagger
+ * /api/attendance/user-attendance-stats:
+ *   get:
+ *     summary: Get attendance statistics for the authenticated user
+ *     tags:
+ *       - Attendance
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Attendance statistics fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 data:
+ *                   $ref: '#/components/schemas/UserAttendanceStats'
+ *       401:
+ *         description: Unauthorized - user is not authenticated
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Could not retrieve user stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+export const getUserStats = async(req : Request , res : Response) : Promise<void> =>{
+  const userId = req.user?.id;
+   if (!userId) {
+    res.status(401).json({ message: "User not authenticated" });
+    return;
+  }
+  try{
+    const data = await getUserAttendanceStats(userId);
+    res.json(data).status(200);
+    return;
+  }
+  catch(e)
+  {
+    res.status(404).json({
+      success: false,
+      message : e instanceof Error ? e.message : 'Failed to get user attendance stats',
+    });
+    return;
   }
 }

@@ -1,44 +1,28 @@
 import { PrismaClient } from '@prisma/client';
-import bcrypt from 'bcryptjs';
 import crypto from 'crypto';
-import jwt from 'jsonwebtoken';
-import {
-  AttendanceSession,
-  AttendanceSessionWithEvent,
-  AttendanceSessionCreate,
-  AttendanceSessionToggleActive,
-  AttendanceSessionUpdate,
-  AttendanceSessionInput,
-  Attendance,
-  AttendanceResponse,
-  AttendanceSessionResponse,
-  AttendanceSessionWithEventResponse,
-  AttendanceUserEventSessionStatsResponse
-} from '../types/attendance.types';
-
+import { AttendanceSessionCreate, AttendanceSessionResponse, AttendanceUserEventSessionStatsResponse, UserAttendanceStats, UserPersonalBest } from '../types/attendance.types';
 const prisma = new PrismaClient();
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
-export const createSessionService = async (eventId: number,data: AttendanceSessionCreate): Promise<AttendanceSessionResponse> => {
-  const { startTime, endTime, location,sessionName,isActive } = data;
-   
-    const event = await prisma.event.findUnique({
-  where: { id: eventId },
-});
+export const createSessionService = async (eventId: number, data: AttendanceSessionCreate): Promise<AttendanceSessionResponse> => {
+  const { startTime, endTime, location, sessionName, isActive, credits } = data;
 
-if (!event) {
-  throw new Error(`Event with ID ${eventId} does not exist.`);
-}
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+  });
 
-   const missingFields = [];
-if (!startTime) missingFields.push("startTime");
+  if (!event) {
+    throw new Error(`Event with ID ${eventId} does not exist.`);
+  }
 
-if (!location) missingFields.push("location");
-if (!sessionName) missingFields.push("sessionName");
+  const missingFields = [];
+  if (!startTime) missingFields.push("startTime");
 
-if (missingFields.length > 0) {
-  throw new Error(`Missing the required field(s): ${missingFields.join(", ")}`);
-}
+  if (!location) missingFields.push("location");
+  if (!sessionName) missingFields.push("sessionName");
+
+  if (missingFields.length > 0) {
+    throw new Error(`Missing the required field(s): ${missingFields.join(", ")}`);
+  }
 
   const code = crypto.randomBytes(4).toString("hex");
 
@@ -50,24 +34,26 @@ if (missingFields.length > 0) {
       isActive: typeof isActive === 'boolean' ? isActive : undefined,
       code,
       location,
-      sessionName
+      sessionName,
+      credits
     },
   });
 
   return {
-    success : true,
+    success: true,
     message: 'attendance session created successfully',
-    data:{
-    id: session.id,
-    eventId: session.eventId,
-    code: session.code,
-    startTime:  session.startTime,
-    endTime: session.endTime ? session.endTime : null,
-    location: session.location ,
-    sessionName: session.sessionName ,
-    isActive:session.isActive
+    data: {
+      id: session.id,
+      eventId: session.eventId,
+      code: session.code,
+      startTime: session.startTime,
+      endTime: session.endTime ? session.endTime : null,
+      location: session.location,
+      sessionName: session.sessionName,
+      isActive: session.isActive,
+      credits : session.credits
     }
-  
+
   };
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -76,7 +62,7 @@ export const updateSessionService = async (
   sessionId: number,
   data: AttendanceSessionCreate
 ): Promise<AttendanceSessionResponse> => {
-  const { startTime, endTime, location, sessionName, isActive} = data;
+  const { startTime, endTime, location, sessionName, isActive  , credits} = data;
 
   const session = await prisma.attendanceSession.findUnique({
     where: { id: sessionId },
@@ -86,16 +72,17 @@ export const updateSessionService = async (
     throw new Error(`Attendance session with ID ${sessionId} does not exist.`);
   }
 
-const updatedSession = await prisma.attendanceSession.update({
-  where: { id: sessionId },
-  data: {
-    startTime: startTime ? new Date(startTime) : undefined,
-    endTime: endTime ? new Date(endTime) : undefined,
-    location: location !== undefined ? location : undefined,
-    sessionName: sessionName !== undefined ? sessionName : undefined,
-    isActive: typeof isActive === 'boolean' ? isActive : undefined,
-  },
-});
+  const updatedSession = await prisma.attendanceSession.update({
+    where: { id: sessionId },
+    data: {
+      startTime: startTime ? new Date(startTime) : undefined,
+      endTime: endTime ? new Date(endTime) : undefined,
+      location: location !== undefined ? location : undefined,
+      sessionName: sessionName !== undefined ? sessionName : undefined,
+      isActive: typeof isActive === 'boolean' ? isActive : undefined,
+      credits : credits
+    },
+  });
 
   return {
     success: true,
@@ -108,6 +95,7 @@ const updatedSession = await prisma.attendanceSession.update({
       location: updatedSession.location,
       code: updatedSession.code,
       isActive: updatedSession.isActive,
+      credits : updatedSession.credits
     },
   };
 };
@@ -197,15 +185,16 @@ export const getAttendanceSessionService = async (
       location: session.location,
       sessionName: session.sessionName,
       isActive: session.isActive,
+      credits: session.credits
     },
   };
 };
 ///////////////////////////////////////////////////////////////////////////////////////////////////
-export const markSession= async (
-  userId: number,sessionId: number,code:string,eventId:number
-)=> {
- 
-    const event = await prisma.event.findUnique({
+export const markSession = async (
+  userId: number, sessionId: number, code: string, eventId: number
+) => {
+
+  const event = await prisma.event.findUnique({
     where: { id: eventId },
   });
 
@@ -213,32 +202,32 @@ export const markSession= async (
     throw new Error("Event not found");
   }
   //have to check session id is active or not 
-const session = await prisma.attendanceSession.findFirst({
-  where: {
-    id: sessionId,
-    eventId: eventId, // Ensures the session belongs to this event
-  },
-  select: {
-    code: true,
-    isActive: true,
-  },
-});
+  const session = await prisma.attendanceSession.findFirst({
+    where: {
+      id: sessionId,
+      eventId: eventId, // Ensures the session belongs to this event
+    },
+    select: {
+      code: true,
+      isActive: true,
+    },
+  });
 
-if (!session) {
-  throw new Error(`Session ID ${sessionId} does not belong to Event ID ${eventId}`);
-}
+  if (!session) {
+    throw new Error(`Session ID ${sessionId} does not belong to Event ID ${eventId}`);
+  }
 
   if (!session.isActive) {
     throw new Error("Session is not active");
   }
- 
+
   // console.log(session.code);
   // console.log(code);
   if (session.code !== code) {
     throw new Error("Invalid session code");
   }
 
-  
+
   const alreadyMarked = await prisma.attendance.findFirst({
     where: {
       userId,
@@ -250,38 +239,24 @@ if (!session) {
     throw new Error("Attendance already marked");
   }
 
-const attendance = await prisma.attendance.create({
-  data: {
-    userId: userId,
-    sessionId: sessionId,
-  },
-});
+  const attendance = await prisma.attendance.create({
+    data: {
+      userId: userId,
+      sessionId: sessionId,
+    },
+  });
 
- return {
+  return {
     success: true,
     message: "Attendance marked successfully",
     data: attendance,
   };
-  }
+}
 
 
-//   return {
-//     success: true,
-//     message: "Attendance session updated successfully",
-//     data: {
-//       eventId: updatedSession.eventId,
-//       sessionName: updatedSession.sessionName,
-//       startTime: updatedSession.startTime,
-//       endTime: updatedSession.endTime,
-//       location: updatedSession.location,
-//       code: updatedSession.code,
-//       isActive: updatedSession.isActive,
-//     },
-//   };
-// };
 
 
-export const getUserAttendanceSessionStatsService = async (userId : number , eventId : number) : Promise<AttendanceUserEventSessionStatsResponse> => {
+export const getUserAttendanceSessionStatsService = async (userId: number, eventId: number): Promise<AttendanceUserEventSessionStatsResponse> => {
   const event = await prisma.event.findUnique({
     where: { id: eventId },
   });
@@ -326,6 +301,7 @@ export const getUserAttendanceSessionStatsService = async (userId : number , eve
     code: session.code,
     location: session.location,
     sessionName: session.sessionName,
+    credits:session.credits,
     present: presentSessionIds.has(session.id)
   }));
 
@@ -337,6 +313,50 @@ export const getUserAttendanceSessionStatsService = async (userId : number , eve
     data: sessionStats,
   };
 
-
-  
 }
+
+export const getUserAttendanceStats = async (userId: number): Promise<UserAttendanceStats> => {
+  const sessions = await prisma.attendance.findMany({
+    where: {
+      userId: userId,
+    },
+    include: {
+      session: true, // includes AttendanceSession
+    },
+  });
+
+  let totalCredits = 0;
+  let bestSession: UserPersonalBest = {
+    sessionId: 0,
+    userId: userId,
+    credits: 0,
+  };
+
+  sessions.forEach((attendance) => {
+    const credits = attendance.session.credits;
+    console.log('reached here');
+    totalCredits += credits;
+
+    if (attendance.session.credits > bestSession.credits) {
+      console.log('reached here');
+      bestSession = {
+        sessionId: attendance.session.id,
+        userId: attendance.userId,
+        credits: credits,
+      };
+    }
+  });
+
+  const attendanceSessions = await prisma.attendanceSession.findMany({});
+  const completionRate = attendanceSessions.length > 0
+    ? (sessions.length / attendanceSessions.length) * 100
+    : 0;
+
+  return {
+    sessionsAttended: sessions.length,
+    sessions: sessions.map((a) => { return a.session }),
+    totalCredits,
+    completionRate,
+    userPersonalBest: bestSession,
+  };
+};
