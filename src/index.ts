@@ -9,6 +9,8 @@ import eventRoutes from './routes/event.routes';
 import rsvpRoutes from './routes/rsvp.routes';
 import attendanceRoutes from './routes/attendance.routes';
 import dotenv from 'dotenv';
+import { PrismaClient } from '@prisma/client';
+const prisma = new PrismaClient();
 import { 
   registerUser, 
   loginUserController, 

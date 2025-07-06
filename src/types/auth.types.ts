@@ -15,16 +15,16 @@ export interface IUser {
   passoutYear: number;
   roll: number;
   hours: number;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IAdmin {
   id: number;
   name?: string;
   email: string;
-  createdAt: Date;
-  updatedAt: Date;
+  createdAt?: Date;
+  updatedAt?: Date;
 }
 
 export interface IUserCreate {
