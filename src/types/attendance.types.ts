@@ -9,7 +9,8 @@ export interface AttendanceSession {
   isActive: boolean;
   sessionName: string;
   code: string;
-  location:string; // change
+  location:string; 
+  credits : number;
 }
 
 export interface AttendanceSessionWithEvent {
@@ -22,6 +23,7 @@ export interface AttendanceSessionWithEvent {
     code: string;
     event : EventData;
     location:string; 
+    credits : number;
 }
 
 export interface AttendanceSessionCreate{
@@ -31,6 +33,7 @@ export interface AttendanceSessionCreate{
     location: string;
     sessionName: string;
     isActive:boolean;
+    credits : number;
 }
 
 export interface AttendanceSessionToggleActive{
@@ -46,8 +49,21 @@ export interface AttendanceSessionUpdate{
     isActive?: boolean;
     sessionName?: string;
     location:string; 
+    credits:number;
+}
+export interface UserAttendanceStats{
+  sessionsAttended : number;
+  sessions: AttendanceSession[];
+  totalCredits: number;
+  completionRate : number;
+  userPersonalBest : UserPersonalBest;
 }
 
+export interface UserPersonalBest{
+  sessionId: number;
+  userId : number;
+  credits : number;
+}
 
 
 export interface AttendanceSessionInput {
@@ -57,6 +73,7 @@ export interface AttendanceSessionInput {
   isActive: boolean;
   sessionName: string;
   location:string; 
+  credits:number;
 }
 
 export interface Attendance {
@@ -77,6 +94,7 @@ export interface UserEventSessionStats{
   code: string;
   location: string;
   present: boolean;
+  credits:number;
 }
 
 
