@@ -23,10 +23,16 @@ import {
 } from './controllers/auth.controller';
 import { authenticateToken, requireUser, requireAdmin } from './middlewares/auth.middleware';
 
+
 // Load environment variables
 dotenv.config();
 
 const app = express();
+
+app.use(cors({
+  origin: 'http://localhost:3001', 
+  credentials: true,
+}));
 
 // Middleware
 app.use(express.json());
