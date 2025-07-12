@@ -62,6 +62,7 @@ import {
  */
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
+    console.log("heelo");
     const userData = req.body;
     const result = await createUser(userData);
     
@@ -70,6 +71,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
       data: result,
     });
   } catch (error) {
+    console.log("error");
     res.status(400).json({
       success: false,
       error: error instanceof Error ? error.message : 'Registration failed',

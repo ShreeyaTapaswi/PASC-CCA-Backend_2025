@@ -60,10 +60,12 @@ app.get('/api/auth/admin/me', authenticateToken, requireAdmin, getCurrentAdmin);
 
 // Routes
 app.use('/api/auth', authRoutes);
-app.use('/api/events' , eventRoutes);
+app.use('/api/events', eventRoutes);
 app.use('/api/rsvps', rsvpRoutes);
 app.use('/api/attendance', attendanceRoutes);
+
 const PORT = process.env.PORT || 3000;
+
 async function connectDB() {
   try {
     await prisma.$connect();
@@ -73,8 +75,14 @@ async function connectDB() {
     process.exit(1); // Exit process if DB connection fails
   }
 }
-app.listen(PORT, () => {
-  console.log(`Server is running on port ${PORT}`);
-  console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
-  console.log("Database_url :" , process.env.DATABASE_URL) ;
-}); 
+
+async function startServer() {
+  await connectDB();
+  app.listen(PORT, () => {
+    console.log(`Server is running on port ${PORT}`);
+    console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
+    console.log("Database_url :", process.env.DATABASE_URL);
+  });
+}
+
+startServer();
