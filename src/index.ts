@@ -30,24 +30,24 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:3001', 
+  origin: 'http://localhost:3000', 
   credentials: true,
 }));
 
 // Middleware
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
-app.use(cors());
+// app.use(cors());
 app.use(helmet());
 app.use(morgan('dev'));
 
-app.use((req, res, next) => {
-  res.setHeader(
-    "Content-Security-Policy",
-    "default-src 'self'; connect-src 'self' http://localhost:3000 https://pasc-cca-backend-2025.onrender.com"
-  );
-  next();
-});
+// app.use((req, res, next) => {
+//   res.setHeader(
+//     "Content-Security-Policy",
+//     "default-src 'self'; connect-src 'self' http://localhost:3000 https://pasc-cca-backend-2025.onrender.com"
+//   );
+//   next();
+// });
 
 // Swagger Documentation
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
@@ -70,7 +70,7 @@ app.use('/api/events', eventRoutes);
 app.use('/api/rsvps', rsvpRoutes);
 app.use('/api/attendance', attendanceRoutes);
 
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 4000; /////////////////
 
 async function connectDB() {
   try {
