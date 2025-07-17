@@ -1,3 +1,6 @@
+import { Rsvp } from "./rsvp.types";
+
+
 export type EventStatus = 'UPCOMING' | 'ONGOING' | 'COMPLETED';
 
 export interface EventInput {
@@ -45,6 +48,12 @@ export interface ApiResponse<T = any> {
   error?: string;
 }
 
+//if user has rsvp into that event then the boolean will be true or else false
+export interface EventAndRsvp {
+  event : EventData ;
+  rsvp : Rsvp | null;
+}
+export type EventUserResponse = ApiResponse<EventAndRsvp[]>;
 // For fetching a single event (e.g., getEventById)
 export type EventResponse = ApiResponse<EventData>;
 

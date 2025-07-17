@@ -158,6 +158,24 @@ const options: swaggerJsdoc.Options = {
             updatedAt: { type: 'string', format: 'date-time' },
           },
         },
+        EventAndRsvp: {
+          type: 'object',
+          properties: {
+            event: { $ref: '#/components/schemas/Event' },
+            rsvp: { type: 'boolean', description: 'True if user has RSVP for this event' }
+          }
+        },
+        EventUserResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/EventAndRsvp' }
+            }
+          }
+        },
       },
     },
   },
