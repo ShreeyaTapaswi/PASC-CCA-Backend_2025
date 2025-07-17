@@ -360,3 +360,19 @@ export const getUserAttendanceStats = async (userId: number): Promise<UserAttend
     userPersonalBest: bestSession,
   };
 };
+
+// Fetch all attendance sessions for a given eventId
+export const getSessionsByEventIdService = async (eventId: number) => {
+  if (isNaN(eventId)) {
+    throw new Error('Invalid event ID');
+  }
+  const sessions = await prisma.attendanceSession.findMany({
+    where: { eventId },
+    orderBy: { startTime: 'asc' },
+  });
+  return {
+    success: true,
+    message: 'Attendance sessions fetched successfully',
+    data: sessions,
+  };
+};

@@ -59,7 +59,6 @@ model Event {
   createdAt   DateTime            @default(now())
   updatedAt   DateTime            @updatedAt
   rsvps       Rsvp[]
-  about       String?  
   prerequisite String?
   sessions    AttendanceSession[]
 }

@@ -156,6 +156,7 @@ const options: swaggerJsdoc.Options = {
             endDate: { type: 'string', format: 'date-time' },
             createdAt: { type: 'string', format: 'date-time' },
             updatedAt: { type: 'string', format: 'date-time' },
+            prerequisite: { type: 'string', nullable: true },
           },
         },
       },

@@ -9,6 +9,7 @@ import {
   markAttendanceForSession,
   getUserAttendanceSessionStats,
   getUserStats,
+  getSessionsByEventId,
 } from '../controllers/attendance.controller';
 
 const router = Router();
@@ -21,7 +22,7 @@ router.put('/events/sessions/:sessionId', authenticateToken, requireAdmin,update
 // router.get('/events/:eventId/sessions/:sessionId', authenticateToken, requireAdmin, getAttendanceSession);
 router.get('/sessions/:sessionId/stats' , authenticateToken, requireAdmin, getAttendanceSessionStats);
 router.get('/events/:eventId/attendance', authenticateToken, requireAdmin,);
-router.get('/events/:eventId/sessions', authenticateToken, requireAdmin,);//get all sessions for an event
+router.get('/events/:eventId/sessions', authenticateToken, requireAdmin, getSessionsByEventId);//get all sessions for an event
 
 //User routes
 // /events/:eventId/sessions/:sessionId/attend

@@ -65,7 +65,6 @@ const createTokenWithRetry = async (
 // User Authentication Functions
 export const createUser = async (userData: IUserCreate): Promise<IAuthResponse> => {
   const hashedPassword = await hashPassword(userData.password);
-
   const user = await prisma.user.create({
     data: {
       ...userData,

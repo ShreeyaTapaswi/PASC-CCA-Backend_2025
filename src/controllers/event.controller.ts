@@ -45,6 +45,9 @@ import { Request, Response } from "express";
  *                 type: integer
  *               capacity:
  *                 type: integer
+ *               prerequisite:
+ *                 type: string
+ *     
  *     responses:
  *       201:
  *         description: Event created successfully
@@ -67,7 +70,9 @@ import { Request, Response } from "express";
  */
 export const createEvent = async (req: Request, res: Response): Promise<void> => {
   try {
+    
     const eventData = req.body;
+    console.log(eventData);
     const result = await postEvent(eventData);
 
     if (!result.success) {
@@ -173,6 +178,8 @@ export const getEventsForAdmin = async (req: Request, res: Response): Promise<vo
  *               endDate:
  *                 type: string
  *                 format: date-time
+ *               prerequisite:
+ *                 type: string
  *     responses:
  *       200:
  *         description: Event updated successfully
