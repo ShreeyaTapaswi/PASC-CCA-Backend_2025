@@ -1,5 +1,5 @@
 import { EventInput, EventResponse } from "src/types/event.types";
-import { deleteEventById, fetchAllEvents, getEventByIdPublic, getEventsAdmin, postEvent, updateEventService , fetchEventByStatus } from "../services/event.service";
+import { deleteEventById, fetchAllEvents, getEventByIdPublic, getEventsAdmin, postEvent, updateEventService , fetchEventByStatus, getEventsForUser } from "../services/event.service";
 
 import { Request, Response } from "express";
 
@@ -132,6 +132,54 @@ export const getEventsForAdmin = async (req: Request, res: Response): Promise<vo
     });
   }
 }
+
+
+/**
+ * @swagger
+ * /api/events/user/:
+ *   get:
+ *     summary: Get all events with RSVP status for the current user
+ *     tags: [Events]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Successfully fetched events with RSVP status
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/EventUserResponse'
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+export const getEventsOfUser = async (  req : Request , res : Response ) : Promise<void> => {
+  try{
+    console.log("reached here");
+    const userId = req.user?.id;
+    const response = await getEventsForUser(userId as number);
+    res.json(response).status(200);
+  }catch(error)
+  {
+    console.error('Controller error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Internal server error',
+      error: error instanceof Error ? error.message : 'Unexpected error'
+    });
+  }
+}
+
+
 
 /**
  * @swagger
