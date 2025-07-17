@@ -81,6 +81,7 @@ async function connectDB() {
     process.exit(1); // Exit process if DB connection fails
   }
 }
+console.log(PORT);
 
 async function startServer() {
   await connectDB();

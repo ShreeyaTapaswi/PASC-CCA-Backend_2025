@@ -178,7 +178,8 @@ export const fetchAllEvents = async (
       startDate: new Date(event.startDate),
       endDate: new Date(event.endDate),
       createdAt: new Date(event.createdAt),
-      updatedAt: new Date(event.updatedAt)
+      updatedAt: new Date(event.updatedAt),
+      prerequisite: event.prerequisite
     }));
 
     return {

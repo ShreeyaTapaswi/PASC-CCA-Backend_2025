@@ -8,6 +8,7 @@ import {
   markSession,
   getUserAttendanceSessionStatsService,
   getUserAttendanceStats,
+  getSessionsByEventIdService,
 } from '../services/attendance.service';
 
 /**
@@ -636,3 +637,109 @@ export const getUserStats = async(req : Request , res : Response) : Promise<void
     return;
   }
 }
+
+/**
+ * @swagger
+ * /api/attendance/events/{eventId}/sessions:
+ *   get:
+ *     summary: Get all attendance sessions for a specific event (Admin Only)
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - name: eventId
+ *         in: path
+ *         required: true
+ *         description: ID of the event
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Attendance sessions fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 message:
+ *                   type: string
+ *                   example: Attendance sessions fetched successfully
+ *                 data:
+ *                   type: array
+ *                   items:
+ *                     type: object
+ *                     properties:
+ *                       id:
+ *                         type: integer
+ *                         example: 1
+ *                       eventId:
+ *                         type: integer
+ *                         example: 12
+ *                       sessionName:
+ *                         type: string
+ *                         example: "Morning Session"
+ *                       code:
+ *                         type: string
+ *                         example: "a1b2c3d4"
+ *                       startTime:
+ *                         type: string
+ *                         format: date-time
+ *                         example: "2025-06-22T09:00:00.000Z"
+ *                       endTime:
+ *                         type: string
+ *                         format: date-time
+ *                         nullable: true
+ *                         example: "2025-06-22T10:00:00.000Z"
+ *                       location:
+ *                         type: string
+ *                         example: "Hall A"
+ *                       isActive:
+ *                         type: boolean
+ *                         example: true
+ *                       credits:
+ *                         type: integer
+ *                         example: 5
+ *       400:
+ *         description: Bad request - Invalid event ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       401:
+ *         description: Unauthorized - Authentication required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       403:
+ *         description: Forbidden - Admin access required
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       500:
+ *         description: Internal Server Error
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+export const getSessionsByEventId = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const eventId = parseInt(req.params.eventId);
+    if (isNaN(eventId)) {
+      res.status(400).json({ success: false, message: 'Invalid event ID' });
+      return;
+    }
+    const result = await getSessionsByEventIdService(eventId);
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to fetch attendance sessions',
+    });
+  }
+};

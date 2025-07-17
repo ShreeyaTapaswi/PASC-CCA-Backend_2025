@@ -9,6 +9,7 @@ export interface EventInput {
   capacity: number;
   startDate: string | Date;
   endDate: string | Date;
+  prerequisite?: string;
 }
 
 export interface EventData {
@@ -24,6 +25,7 @@ export interface EventData {
   endDate: Date;
   createdAt: Date;
   updatedAt: Date;
+  prerequisite?: string;
 }
 
 export interface Pagination {
