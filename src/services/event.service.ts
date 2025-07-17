@@ -1,5 +1,5 @@
 import { PrismaClient } from '@prisma/client';
-import { EventData, EventInput, EventResponse, PaginatedEventResponse } from '../types/event.types';
+import { EventData, EventInput, EventResponse, PaginatedEventResponse, EventUserResponse, EventAndRsvp } from '../types/event.types';
 
 const prisma = new PrismaClient();
 
@@ -48,6 +48,56 @@ export const postEvent = async (eventData: EventInput): Promise<EventResponse> =
     } catch (error) {
         console.error('Service error:', error);
         throw error;
+    }
+};
+
+export const getEventsForUser = async (userId: number): Promise<EventUserResponse> => {
+    try {
+        const events = await prisma.event.findMany({
+            orderBy: { startDate: 'asc' },
+            include: {
+                rsvps: {
+                    where: { userId }
+                }
+            }
+        });
+
+        // Map to EventAndRsvp[]
+        const eventsWithRsvp = events.map(event => {
+            // Convert event to EventData shape
+            const { rsvps, ...eventData } = event;
+            const eventDataObj = {
+                id: event.id,
+                title: event.title,
+                description: event.description,
+                location: event.location,
+                credits: event.credits,
+                numDays: event.numDays,
+                capacity: event.capacity,
+                status: event.status,
+                startDate: new Date(event.startDate),
+                endDate: new Date(event.endDate),
+                createdAt: new Date(event.createdAt),
+                updatedAt: new Date(event.updatedAt)
+            };
+            return {
+                event: eventDataObj,
+                rsvp: rsvps.length > 0 ? rsvps[0] : null
+            };
+        });
+
+        return {
+            success: true,
+            message: 'Events fetched successfully',
+            data: eventsWithRsvp
+        };
+    } catch (error) {
+        console.error('Service error:', error);
+        return {
+            success: false,
+            message: 'Failed to fetch events for user',
+            error: error instanceof Error ? error.message : 'Unknown error'
+        };
     }
 };
 
