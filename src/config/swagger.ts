@@ -177,6 +177,35 @@ const options: swaggerJsdoc.Options = {
             }
           }
         },
+        AttendanceSessionWithEventForUser: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                event: { $ref: '#/components/schemas/Event' },
+                session: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer' },
+                      eventId: { type: 'integer' },
+                      startTime: { type: 'string', format: 'date-time' },
+                      endTime: { type: 'string', format: 'date-time', nullable: true },
+                      isActive: { type: 'boolean' },
+                      sessionName: { type: 'string' },
+                      location: { type: 'string' },
+                      credits: { type: 'integer' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
       },
     },
   },
