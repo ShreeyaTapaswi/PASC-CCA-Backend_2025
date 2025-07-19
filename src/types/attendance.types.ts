@@ -65,6 +65,24 @@ export interface UserPersonalBest{
   credits : number;
 }
 
+interface AttendanceSessionForUser {
+  id?: number;
+  eventId: number;
+  startTime?: Date|null;
+  endTime?: Date | null;
+  isActive: boolean;
+  sessionName: string;
+  location:string; 
+  credits : number;
+  attended : boolean;
+}
+
+export interface EventAttendanceSessionForUser {
+  event : EventData;
+  session : AttendanceSessionForUser[];
+}
+
+
 
 export interface AttendanceSessionInput {
   eventId: number;
@@ -103,3 +121,4 @@ export type AttendanceResponse = ApiResponse<Attendance>;
 export type AttendanceSessionResponse = ApiResponse<AttendanceSession>;
 export type AttendanceSessionWithEventResponse = ApiResponse<AttendanceSessionWithEvent>;
 export type AttendanceUserEventSessionStatsResponse = ApiResponse<UserEventSessionStats>;
+export type AttendanceSessionWithEventForUser = ApiResponse<EventAttendanceSessionForUser>

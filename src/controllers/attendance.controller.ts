@@ -9,7 +9,9 @@ import {
   getUserAttendanceSessionStatsService,
   getUserAttendanceStats,
   getSessionsByEventIdService,
+  getSessionsForUser,
 } from '../services/attendance.service';
+import { REPLCommand } from 'repl';
 
 /**
  * @swagger
@@ -637,6 +639,67 @@ export const getUserStats = async(req : Request , res : Response) : Promise<void
     return;
   }
 }
+
+
+
+/**
+ * @swagger
+ * /api/attendance/user/events/{eventId}/sessions:
+ *   get:
+ *     summary: Get all attendance sessions for a specific event
+ *     tags: [Attendance]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *         description: The ID of the event
+ *     responses:
+ *       200:
+ *         description: Event and attendance sessions fetched successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/AttendanceSessionWithEventForUser'
+ *       400:
+ *         description: Invalid event ID
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ *       404:
+ *         description: Event not found or failed to get user attendance stats
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+export const getSessionsForUserByEventId = async(req : Request , res : Response) : Promise<void> => {
+  try {
+    const eventId = Number(req.params.eventId);
+    const userId = req.user?.id;
+    if (isNaN(eventId)) {
+      res.status(400).json({
+        success: false,
+        message: 'Invalid event ID',
+      });
+      return;
+    }
+    const response = await getSessionsForUser(eventId , userId as number);
+    res.status(200).json(response);
+  } catch(e) {
+    res.status(404).json({
+      success: false,
+      message : e instanceof Error ? e.message : 'Failed to get user attendance stats',
+    });
+    return;
+  }
+}
+
+
 
 /**
  * @swagger
