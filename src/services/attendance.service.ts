@@ -1,6 +1,6 @@
 import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
-import { AttendanceSessionCreate, AttendanceSessionResponse, AttendanceUserEventSessionStatsResponse, UserAttendanceStats, UserPersonalBest } from '../types/attendance.types';
+import { AttendanceSessionCreate, AttendanceSessionResponse, AttendanceSessionWithEventForUser, AttendanceUserEventSessionStatsResponse, UserAttendanceStats, UserPersonalBest } from '../types/attendance.types';
 const prisma = new PrismaClient();
 
 export const createSessionService = async (eventId: number, data: AttendanceSessionCreate): Promise<AttendanceSessionResponse> => {
@@ -315,6 +315,78 @@ export const getUserAttendanceSessionStatsService = async (userId: number, event
 
 }
 
+export const getSessionsForUser = async(eventId : number , userId  : number) : Promise<AttendanceSessionWithEventForUser> => {
+  const event  = await prisma.event.findUnique({
+    where : {
+      id : eventId
+    }
+  });
+
+  if (!event) {
+    return {
+      success: false,
+      message: `Event with ID ${eventId} does not exist.`,
+      data: undefined
+    };
+  }
+
+
+
+  const sessions = await prisma.attendanceSession.findMany({
+    where: { eventId },
+    orderBy: { startTime: 'asc' },
+    include : {
+      attendances : {
+        where : {
+          userId 
+        }
+      }
+    }
+  });
+  
+  sessions.forEach((session , id) => {
+    console.log("session : " );
+    console.log(session);
+    console.log("attendances of the session : ");
+    session.attendances.forEach((attendances , id)=>{
+      console.log(attendances);
+    });
+  })
+
+  // Map sessions to AttendanceSessionForUser[]
+  const sessionList = sessions.map(session => ({
+    id: session.id,
+    eventId: session.eventId,
+    startTime: session.startTime,
+    endTime: session.endTime,
+    isActive: session.isActive,
+    sessionName: session.sessionName,
+    location: session.location,
+    credits: session.credits,
+    attended : session.attendances.length !== 0
+  }));
+
+
+
+
+  // Map event.prerequisite: null to undefined for type compatibility
+  const eventData = {
+    ...event,
+    prerequisite: event.prerequisite === null ? undefined : event.prerequisite
+  };
+
+  return {
+    success: true,
+    message: 'Event and attendance sessions fetched successfully',
+    data: {
+      event: eventData,
+      session: sessionList
+    }
+  };
+
+}
+
+
 export const getUserAttendanceStats = async (userId: number): Promise<UserAttendanceStats> => {
   const sessions = await prisma.attendance.findMany({
     where: {
@@ -369,10 +441,20 @@ export const getSessionsByEventIdService = async (eventId: number) => {
   const sessions = await prisma.attendanceSession.findMany({
     where: { eventId },
     orderBy: { startTime: 'asc' },
+    include: {
+      attendances: true
+    }
   });
+  
+  // Map sessions to include 'present' field and remove 'attendances'
+  const mappedSessions = sessions.map(({ attendances, ...session }) => ({
+    ...session,
+    present: attendances.length
+  }));
+
   return {
     success: true,
     message: 'Attendance sessions fetched successfully',
-    data: sessions,
+    data: mappedSessions,
   };
 };
