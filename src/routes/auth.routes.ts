@@ -8,6 +8,7 @@ import {
   loginAdminController,
   logoutAdminController,
   getCurrentAdmin,
+  getUserCountController
 } from '../controllers/auth.controller';
 import { authenticateToken, requireAdmin } from '../middlewares/auth.middleware';
 
@@ -24,5 +25,8 @@ router.post('/admin/register', registerAdmin);
 router.post('/admin/login', loginAdminController);
 router.post('/admin/logout', authenticateToken, requireAdmin, logoutAdminController);
 router.get('/admin/me', authenticateToken, requireAdmin, getCurrentAdmin);
+
+// Add user count route for admin
+router.get('/user/count', authenticateToken, requireAdmin, getUserCountController);
 
 export default router; 

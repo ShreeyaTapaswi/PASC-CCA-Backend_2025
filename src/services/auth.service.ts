@@ -238,4 +238,10 @@ export const getAdminById = async (id: number): Promise<IAdmin | null> => {
       name: admin.name !== null ? admin.name : "",
       email: admin.email
     }
+};
+
+// Add this function to count users
+export const getUserCount = async (): Promise<number> => {
+  const count = await prisma.user.count();
+  return count;
 }; 

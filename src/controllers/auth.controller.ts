@@ -7,7 +7,8 @@ import {
   logoutUser, 
   logoutAdmin,
   getUserById,
-  getAdminById 
+  getAdminById,
+  getUserCount
 } from '../services/auth.service';
 
 /**
@@ -436,5 +437,41 @@ export const getCurrentAdmin = async (req: Request, res: Response): Promise<void
       success: false,
       error: error instanceof Error ? error.message : 'Authentication failed',
     });
+  }
+}; 
+
+/**
+ * @swagger
+ * /api/auth/user/count:
+ *   get:
+ *     summary: Get the total number of users (students)
+ *     tags: [User Authentication]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User count retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                 count:
+ *                   type: integer
+ *       401:
+ *         description: Unauthorized
+ *         content:
+ *           application/json:
+ *             schema:
+ *               $ref: '#/components/schemas/ErrorResponse'
+ */
+export const getUserCountController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const count = await getUserCount();
+    res.status(200).json({ success: true, count });
+  } catch (error) {
+    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to get user count' });
   }
 }; 
