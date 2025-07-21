@@ -39,6 +39,7 @@ import { REPLCommand } from 'repl';
  *               - location
  *               - startTime
  *               - isActive
+ *               - credits
  *             properties:
  *               sessionName:
  *                 type: string
@@ -54,11 +55,13 @@ import { REPLCommand } from 'repl';
  *                 type: string
  *                 format: date-time
  *                 nullable: true
- *                 example: "2025-06-22T10:30:00.000Z"
+ *                 example: "2025-06-22T10:00:00.000Z"
  *               isActive:
  *                 type: boolean
  *                 example: true
-
+ *               credits:
+ *                 type: number
+ *                 example: 5
  *     responses:
  *       201:
  *         description: Attendance session created successfully
