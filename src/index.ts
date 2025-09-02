@@ -30,7 +30,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: 'http://localhost:3000', 
+  origin: '*', 
   credentials: true,
 }));
 
@@ -86,9 +86,8 @@ console.log(PORT);
 async function startServer() {
   await connectDB();
   app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
     console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
-    console.log("Database_url :", process.env.DATABASE_URL);
+    
   });
 }
 
