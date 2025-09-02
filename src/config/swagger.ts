@@ -1,5 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
-
+const PORT = process.env.PORT || 4000;
 const options: swaggerJsdoc.Options = {
   definition: {
     openapi: '3.0.0',
@@ -10,8 +10,7 @@ const options: swaggerJsdoc.Options = {
     },
     servers: [
       {
-        // url: 'https://pasc-cca-backend-2025.onrender.com',
-        url:'http://localhost:4000/',
+        url:`http://localhost:${PORT}/`,
         description: 'Development server',
       },
     ],

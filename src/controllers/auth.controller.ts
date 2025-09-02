@@ -364,13 +364,13 @@ export const logoutAdminController = async (req: Request, res: Response): Promis
 export const getCurrentUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
-    
+    console.log("userId : " , userId);
     if (!userId) {
       throw new Error('User not authenticated');
     }
 
     const user = await getUserById(userId);
-    
+    console.log("user : " ,  user);
     if (!user) {
       throw new Error('User not found');
     }
