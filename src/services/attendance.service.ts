@@ -1,7 +1,8 @@
-import { PrismaClient } from '@prisma/client';
 import crypto from 'crypto';
 import { AttendanceSessionCreate, AttendanceSessionResponse, AttendanceSessionWithEventForUser, AttendanceUserEventSessionStatsResponse, UserAttendanceStats, UserPersonalBest } from '../types/attendance.types';
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import { sendAttendanceMarkedEmail } from './email.service';
+import { notifyAttendanceMarked } from './notification.service';
 
 export const createSessionService = async (eventId: number, data: AttendanceSessionCreate): Promise<AttendanceSessionResponse> => {
   const { startTime, endTime, location, sessionName, isActive, credits } = data;
@@ -239,17 +240,65 @@ export const markSession = async (
     throw new Error("Attendance already marked");
   }
 
-  const attendance = await prisma.attendance.create({
-    data: {
-      userId: userId,
-      sessionId: sessionId,
-    },
+  // Use transaction to ensure atomicity
+  const result = await prisma.$transaction(async (tx) => {
+    // Create attendance record
+    const attendance = await tx.attendance.create({
+      data: {
+        userId: userId,
+        sessionId: sessionId,
+      },
+    });
+
+    // Get session details for credits
+    const sessionDetails = await tx.attendanceSession.findUnique({
+      where: { id: sessionId },
+      include: { event: true }
+    });
+
+    if (sessionDetails) {
+      // Update user's total hours/credits
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          hours: { increment: sessionDetails.credits }
+        }
+      });
+
+      // Get user details for notification
+      const user = await tx.user.findUnique({
+        where: { id: userId },
+        select: { email: true, name: true }
+      });
+
+      if (user) {
+        // Send email and notification (async, don't block)
+        setImmediate(async () => {
+          await sendAttendanceMarkedEmail(
+            user.email,
+            user.name || 'Student',
+            sessionDetails.event.title,
+            sessionDetails.sessionName,
+            sessionDetails.credits
+          );
+
+          await notifyAttendanceMarked(
+            userId,
+            sessionDetails.eventId,
+            sessionDetails.event.title,
+            sessionDetails.credits
+          );
+        });
+      }
+    }
+
+    return attendance;
   });
 
   return {
     success: true,
     message: "Attendance marked successfully",
-    data: attendance,
+    data: result,
   };
 }
 

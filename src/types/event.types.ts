@@ -28,7 +28,7 @@ export interface EventData {
   endDate: Date;
   createdAt: Date;
   updatedAt: Date;
-  prerequisite?: string;
+  prerequisite?: string | null;
 }
 
 export interface Pagination {

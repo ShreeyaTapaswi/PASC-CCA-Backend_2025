@@ -1,8 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import { ITokenPayload } from '../types/auth.types';
+import { prisma } from '../lib/prisma';
 
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
+const JWT_SECRET = process.env.JWT_SECRET!;
+
+if (!JWT_SECRET) {
+  throw new Error('JWT_SECRET environment variable is required');
+}
 
 // Extend Express Request type to include user/admin
 declare global {
@@ -22,11 +27,11 @@ declare global {
   }
 }
 
-export const authenticateToken = (
+export const authenticateToken = async (
   req: Request,
   res: Response,
   next: NextFunction
-): void => {
+): Promise<void> => {
 
   const authHeader = req.headers['authorization'];
 
@@ -42,10 +47,43 @@ export const authenticateToken = (
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as ITokenPayload;
     
+    // Validate token exists in database
     if (decoded.type === 'user') {
+      const tokenRecord = await prisma.userToken.findFirst({
+        where: {
+          userId: decoded.id,
+          token: token,
+          expiresAt: { gt: new Date() }
+        }
+      });
+
+      if (!tokenRecord) {
+        res.status(403).json({
+          success: false,
+          error: 'Invalid or expired token',
+        });
+        return;
+      }
+
       const userPayload = { ...decoded, type: 'user' as const };
       req.user = userPayload;
     } else if (decoded.type === 'admin') {
+      const tokenRecord = await prisma.adminToken.findFirst({
+        where: {
+          adminId: decoded.id,
+          token: token,
+          expiresAt: { gt: new Date() }
+        }
+      });
+
+      if (!tokenRecord) {
+        res.status(403).json({
+          success: false,
+          error: 'Invalid or expired token',
+        });
+        return;
+      }
+
       const adminPayload = { ...decoded, type: 'admin' as const };
       req.admin = adminPayload;
     }

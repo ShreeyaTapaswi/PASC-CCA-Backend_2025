@@ -3,11 +3,10 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getAdminById = exports.getUserById = exports.logoutAdmin = exports.logoutUser = exports.loginAdmin = exports.createAdmin = exports.loginUser = exports.createUser = void 0;
-const client_1 = require("@prisma/client");
+exports.getUserCount = exports.getAdminById = exports.getUserById = exports.logoutAdmin = exports.logoutUser = exports.loginAdmin = exports.createAdmin = exports.loginUser = exports.createUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const prisma = new client_1.PrismaClient();
+const prisma_1 = require("../lib/prisma");
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const hashPassword = async (password) => {
     const salt = await bcryptjs_1.default.genSalt(10);
@@ -21,14 +20,15 @@ const generateToken = (payload) => {
 };
 const createTokenWithRetry = async (token, userId, adminId, payload) => {
     try {
+        const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         if (userId) {
-            await prisma.userToken.create({
-                data: { token, userId },
+            await prisma_1.prisma.userToken.create({
+                data: { token, expiresAt, user: { connect: { id: userId } } },
             });
         }
         else if (adminId) {
-            await prisma.adminToken.create({
-                data: { token, adminId },
+            await prisma_1.prisma.adminToken.create({
+                data: { token, expiresAt, admin: { connect: { id: adminId } } },
             });
         }
     }
@@ -43,8 +43,9 @@ const createTokenWithRetry = async (token, userId, adminId, payload) => {
     }
 };
 const createUser = async (userData) => {
+    var _a;
     const hashedPassword = await hashPassword(userData.password);
-    const user = await prisma.user.create({
+    const user = await prisma_1.prisma.user.create({
         data: {
             ...userData,
             password: hashedPassword,
@@ -55,13 +56,23 @@ const createUser = async (userData) => {
     const token = generateToken(payload);
     await createTokenWithRetry(token, user.id, undefined, payload);
     return {
-        user,
+        user: {
+            id: user.id,
+            name: (_a = user.name) !== null && _a !== void 0 ? _a : "",
+            email: user.email,
+            department: user.department,
+            year: user.year,
+            passoutYear: user.passoutYear,
+            roll: user.roll,
+            hours: user.hours,
+        },
         token,
     };
 };
 exports.createUser = createUser;
 const loginUser = async (credentials) => {
-    const user = await prisma.user.findUnique({
+    var _a;
+    const user = await prisma_1.prisma.user.findUnique({
         where: { email: credentials.email },
     });
     if (!user) {
@@ -75,14 +86,23 @@ const loginUser = async (credentials) => {
     const token = generateToken(payload);
     await createTokenWithRetry(token, user.id, undefined, payload);
     return {
-        user,
+        user: {
+            id: user.id,
+            name: (_a = user.name) !== null && _a !== void 0 ? _a : "",
+            email: user.email,
+            department: user.department,
+            year: user.year,
+            passoutYear: user.passoutYear,
+            roll: user.roll,
+            hours: user.hours,
+        },
         token,
     };
 };
 exports.loginUser = loginUser;
 const createAdmin = async (adminData) => {
     const hashedPassword = await hashPassword(adminData.password);
-    const admin = await prisma.admin.create({
+    const admin = await prisma_1.prisma.admin.create({
         data: {
             ...adminData,
             password: hashedPassword,
@@ -92,13 +112,17 @@ const createAdmin = async (adminData) => {
     const token = generateToken(payload);
     await createTokenWithRetry(token, undefined, admin.id, payload);
     return {
-        admin,
-        token,
+        admin: {
+            id: admin.id,
+            name: admin.name !== null ? admin.name : "",
+            email: admin.email
+        },
+        token
     };
 };
 exports.createAdmin = createAdmin;
 const loginAdmin = async (credentials) => {
-    const admin = await prisma.admin.findUnique({
+    const admin = await prisma_1.prisma.admin.findUnique({
         where: { email: credentials.email },
     });
     if (!admin) {
@@ -112,14 +136,18 @@ const loginAdmin = async (credentials) => {
     const token = generateToken(payload);
     await createTokenWithRetry(token, undefined, admin.id, payload);
     return {
-        admin,
-        token,
+        admin: {
+            id: admin.id,
+            name: admin.name !== null ? admin.name : "",
+            email: admin.email
+        },
+        token
     };
 };
 exports.loginAdmin = loginAdmin;
 const logoutUser = async (token) => {
     try {
-        await prisma.userToken.delete({
+        await prisma_1.prisma.userToken.delete({
             where: { token },
         });
     }
@@ -130,7 +158,7 @@ const logoutUser = async (token) => {
 exports.logoutUser = logoutUser;
 const logoutAdmin = async (token) => {
     try {
-        await prisma.adminToken.delete({
+        await prisma_1.prisma.adminToken.delete({
             where: { token },
         });
     }
@@ -140,15 +168,42 @@ const logoutAdmin = async (token) => {
 };
 exports.logoutAdmin = logoutAdmin;
 const getUserById = async (id) => {
-    return prisma.user.findUnique({
+    var _a;
+    const user = await prisma_1.prisma.user.findUnique({
         where: { id },
     });
+    if (!user) {
+        return null;
+    }
+    return {
+        id: user.id,
+        name: (_a = user.name) !== null && _a !== void 0 ? _a : "",
+        email: user.email,
+        department: user.department,
+        year: user.year,
+        passoutYear: user.passoutYear,
+        roll: user.roll,
+        hours: user.hours,
+    };
 };
 exports.getUserById = getUserById;
 const getAdminById = async (id) => {
-    return prisma.admin.findUnique({
+    const admin = await prisma_1.prisma.admin.findUnique({
         where: { id },
     });
+    if (!admin) {
+        return null;
+    }
+    return {
+        id: admin.id,
+        name: admin.name !== null ? admin.name : "",
+        email: admin.email
+    };
 };
 exports.getAdminById = getAdminById;
+const getUserCount = async () => {
+    const count = await prisma_1.prisma.user.count();
+    return count;
+};
+exports.getUserCount = getUserCount;
 //# sourceMappingURL=auth.service.js.map

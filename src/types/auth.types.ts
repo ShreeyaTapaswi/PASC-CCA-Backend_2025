@@ -1,16 +1,12 @@
-export enum Department {
-  CE = 'CE',
-  IT = 'IT',
-  ENTC = 'ENTC',
-  ECE = 'ECE',
-  AIDS = 'AIDS'
-}
+import { Department as PrismaDepartment } from '@prisma/client';
+
+export type Department = PrismaDepartment;
 
 export interface IUser {
   id: number;
   name?: string;
   email: string;
-  department: Department;
+  department: PrismaDepartment;
   year: number;
   passoutYear: number;
   roll: number;

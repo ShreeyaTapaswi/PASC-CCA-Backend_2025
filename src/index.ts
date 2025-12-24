@@ -8,9 +8,16 @@ import authRoutes from './routes/auth.routes';
 import eventRoutes from './routes/event.routes';
 import rsvpRoutes from './routes/rsvp.routes';
 import attendanceRoutes from './routes/attendance.routes';
+import reviewRoutes from './routes/review.routes';
+import resourceRoutes from './routes/resource.routes';
+import galleryRoutes from './routes/gallery.routes';
+import leaderboardRoutes from './routes/leaderboard.routes';
+import announcementRoutes from './routes/announcement.routes';
+import analyticsRoutes from './routes/analytics.routes';
+import calendarRoutes from './routes/calendar.routes';
+import notificationRoutes from './routes/notification.routes';
 import dotenv from 'dotenv';
-import { PrismaClient } from '@prisma/client';
-const prisma = new PrismaClient();
+import { prisma } from './lib/prisma';
 import { 
   registerUser, 
   loginUserController, 
@@ -69,6 +76,14 @@ app.use('/api/auth', authRoutes);
 app.use('/api/events', eventRoutes);
 app.use('/api/rsvps', rsvpRoutes);
 app.use('/api/attendance', attendanceRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/resources', resourceRoutes);
+app.use('/api/gallery', galleryRoutes);
+app.use('/api/leaderboard', leaderboardRoutes);
+app.use('/api/announcements', announcementRoutes);
+app.use('/api/analytics', analyticsRoutes);
+app.use('/api/calendar', calendarRoutes);
+app.use('/api/notifications', notificationRoutes);
 
 const PORT = process.env.PORT || 4000; /////////////////
 
