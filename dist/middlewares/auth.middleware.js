@@ -5,8 +5,12 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.requireAdmin = exports.requireUser = exports.authenticateToken = void 0;
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
-const authenticateToken = (req, res, next) => {
+const prisma_1 = require("../lib/prisma");
+const JWT_SECRET = process.env.JWT_SECRET;
+if (!JWT_SECRET) {
+    throw new Error('JWT_SECRET environment variable is required');
+}
+const authenticateToken = async (req, res, next) => {
     const authHeader = req.headers['authorization'];
     const token = authHeader && authHeader.split(' ')[1];
     if (!token) {
@@ -19,10 +23,38 @@ const authenticateToken = (req, res, next) => {
     try {
         const decoded = jsonwebtoken_1.default.verify(token, JWT_SECRET);
         if (decoded.type === 'user') {
+            const tokenRecord = await prisma_1.prisma.userToken.findFirst({
+                where: {
+                    userId: decoded.id,
+                    token: token,
+                    expiresAt: { gt: new Date() }
+                }
+            });
+            if (!tokenRecord) {
+                res.status(403).json({
+                    success: false,
+                    error: 'Invalid or expired token',
+                });
+                return;
+            }
             const userPayload = { ...decoded, type: 'user' };
             req.user = userPayload;
         }
         else if (decoded.type === 'admin') {
+            const tokenRecord = await prisma_1.prisma.adminToken.findFirst({
+                where: {
+                    adminId: decoded.id,
+                    token: token,
+                    expiresAt: { gt: new Date() }
+                }
+            });
+            if (!tokenRecord) {
+                res.status(403).json({
+                    success: false,
+                    error: 'Invalid or expired token',
+                });
+                return;
+            }
             const adminPayload = { ...decoded, type: 'admin' };
             req.admin = adminPayload;
         }

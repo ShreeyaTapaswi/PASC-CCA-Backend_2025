@@ -12,8 +12,7 @@ import {
   UpdateRsvp,
 } from "../services/rsvp.service";
 import { ApiResponse } from "src/types/event.types";
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 
 /**
@@ -172,21 +171,23 @@ export const createRsvp = async (req: Request, res: Response) => {
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-export const getRsvpUser = async (req: Request, res: Response) => {
+export const getRsvpUser = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user!.id; // Get from authenticated user
 
     if (!userId) {
-      return res.status(401).json({
+      res.status(401).json({
         success: false,
         message: "User not authenticated",
       });
+      return;
     }
 
     const result = await getUserRsvps(userId);
 
     if (!result.success) {
-      return res.status(400).json(result);
+      res.status(400).json(result);
+      return;
     }
 
     res.status(200).json(result);

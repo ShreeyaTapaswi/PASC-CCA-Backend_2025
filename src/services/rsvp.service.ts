@@ -1,16 +1,25 @@
-import { PrismaClient } from '@prisma/client';
 import { RsvpResponse, RsvpCreate, RsvpWithUser, RsvpStatus } from '../types/rsvp.types';
 import { ApiResponse } from '../types/event.types';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
+import { sendRsvpConfirmationEmail, sendWaitlistPromotedEmail } from './email.service';
+import { notifyRsvpConfirmed, notifyWaitlistPromoted } from './notification.service';
 
 export const postrsvp = async (rsvpData: RsvpCreate, userId: number): Promise<RsvpResponse> => {
   try {
     const event = await prisma.event.findUnique({
       where: {
         id: rsvpData.eventId
+      },
+      include: {
+        rsvps: {
+          where: {
+            status: 'ATTENDING',
+            waitlisted: false
+          }
+        }
       }
-    })
+    });
+
     if (!event) {
       return {
         success: false,
@@ -35,16 +44,69 @@ export const postrsvp = async (rsvpData: RsvpCreate, userId: number): Promise<Rs
       };
     }
 
+    // Check capacity
+    const confirmedRsvpCount = event.rsvps.length;
+    const isAtCapacity = confirmedRsvpCount >= event.capacity;
+
+    let waitlisted = false;
+    let waitlistPosition = null;
+
+    if (isAtCapacity && rsvpData.status === 'ATTENDING') {
+      // Add to waitlist
+      const waitlistCount = await prisma.rsvp.count({
+        where: {
+          eventId: rsvpData.eventId,
+          waitlisted: true
+        }
+      });
+      waitlisted = true;
+      waitlistPosition = waitlistCount + 1;
+    }
+
     const result = await prisma.rsvp.create({
       data: {
         ...rsvpData,
-        userId: userId
+        userId: userId,
+        waitlisted,
+        waitlistPosition
       }
     });
 
+    // Get user details for email
+    const user = await prisma.user.findUnique({
+      where: { id: userId },
+      select: { email: true, name: true }
+    });
+
+    if (user) {
+      const eventDate = event.startDate.toLocaleDateString('en-US', {
+        weekday: 'long',
+        year: 'numeric',
+        month: 'long',
+        day: 'numeric'
+      });
+
+      if (waitlisted) {
+        // Send notification about waitlist
+        await notifyRsvpConfirmed(userId, event.id, event.title);
+      } else {
+        // Send confirmation email and notification
+        await sendRsvpConfirmationEmail(
+          user.email,
+          user.name || 'Student',
+          event.title,
+          eventDate,
+          event.location
+        );
+        await notifyRsvpConfirmed(userId, event.id, event.title);
+      }
+    }
+
     return {
       success: true,
-      message: 'RSVP created successfully',
+      message: waitlisted 
+        ? `Added to waitlist (Position: ${waitlistPosition})`
+        : 'RSVP created successfully',
       data: result
     };
   } catch (error) {
@@ -159,7 +221,8 @@ export const getRsvpsByEventId = async (eventId: number): Promise<ApiResponse<Rs
 export const deleteRsvpById = async (userId : number ,rsvpId: number): Promise<RsvpResponse> => {
   try {
     const existingRsvp = await prisma.rsvp.findUnique({
-      where: { id: rsvpId , userId : userId  }
+      where: { id: rsvpId , userId : userId  },
+      include: { event: true }
     });
     if (!existingRsvp) {
       return {
@@ -168,9 +231,18 @@ export const deleteRsvpById = async (userId : number ,rsvpId: number): Promise<R
         data: undefined
       };
     }
+
+    const wasConfirmed = existingRsvp.status === 'ATTENDING' && !existingRsvp.waitlisted;
+
     await prisma.rsvp.delete({
       where: { id: rsvpId }
     });
+
+    // If this was a confirmed RSVP, promote someone from waitlist
+    if (wasConfirmed) {
+      await promoteFromWaitlist(existingRsvp.eventId);
+    }
+
     return {
       success: true,
       message: 'RSVP deleted successfully',
@@ -185,6 +257,69 @@ export const deleteRsvpById = async (userId : number ,rsvpId: number): Promise<R
     };
   }
 }
+
+// Helper function to promote from waitlist
+const promoteFromWaitlist = async (eventId: number): Promise<void> => {
+  const nextInWaitlist = await prisma.rsvp.findFirst({
+    where: {
+      eventId,
+      waitlisted: true,
+      status: 'ATTENDING'
+    },
+    orderBy: {
+      waitlistPosition: 'asc'
+    },
+    include: {
+      user: true,
+      event: true
+    }
+  });
+
+  if (nextInWaitlist) {
+    // Promote from waitlist
+    await prisma.rsvp.update({
+      where: { id: nextInWaitlist.id },
+      data: {
+        waitlisted: false,
+        waitlistPosition: null
+      }
+    });
+
+    // Update positions for remaining waitlist
+    await prisma.rsvp.updateMany({
+      where: {
+        eventId,
+        waitlisted: true,
+        waitlistPosition: { gt: nextInWaitlist.waitlistPosition! }
+      },
+      data: {
+        waitlistPosition: { decrement: 1 }
+      }
+    });
+
+    // Send notification and email
+    const eventDate = nextInWaitlist.event.startDate.toLocaleDateString('en-US', {
+      weekday: 'long',
+      year: 'numeric',
+      month: 'long',
+      day: 'numeric'
+    });
+
+    await sendWaitlistPromotedEmail(
+      nextInWaitlist.user.email,
+      nextInWaitlist.user.name || 'Student',
+      nextInWaitlist.event.title,
+      eventDate,
+      nextInWaitlist.event.location
+    );
+
+    await notifyWaitlistPromoted(
+      nextInWaitlist.userId,
+      nextInWaitlist.eventId,
+      nextInWaitlist.event.title
+    );
+  }
+};
 
 export const UpdateRsvp = async (userId: number, eventId: number, status: RsvpStatus): Promise<RsvpResponse> => {
   try {

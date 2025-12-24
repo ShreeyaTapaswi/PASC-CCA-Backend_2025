@@ -1,7 +1,5 @@
-import { PrismaClient } from '@prisma/client';
 import { EventData, EventInput, EventResponse, PaginatedEventResponse, EventUserResponse, EventAndRsvp } from '../types/event.types';
-
-const prisma = new PrismaClient();
+import { prisma } from '../lib/prisma';
 
 export const postEvent = async (eventData: EventInput): Promise<EventResponse> => {
     try {

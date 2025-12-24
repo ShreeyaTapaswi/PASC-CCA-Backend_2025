@@ -1,9 +1,10 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.getCurrentAdmin = exports.getCurrentUser = exports.logoutAdminController = exports.loginAdminController = exports.registerAdmin = exports.logoutUserController = exports.loginUserController = exports.registerUser = void 0;
+exports.getUserCountController = exports.getCurrentAdmin = exports.getCurrentUser = exports.logoutAdminController = exports.loginAdminController = exports.registerAdmin = exports.logoutUserController = exports.loginUserController = exports.registerUser = void 0;
 const auth_service_1 = require("../services/auth.service");
 const registerUser = async (req, res) => {
     try {
+        console.log("heelo");
         const userData = req.body;
         const result = await (0, auth_service_1.createUser)(userData);
         res.status(201).json({
@@ -12,6 +13,7 @@ const registerUser = async (req, res) => {
         });
     }
     catch (error) {
+        console.log("error");
         res.status(400).json({
             success: false,
             error: error instanceof Error ? error.message : 'Registration failed',
@@ -116,10 +118,12 @@ const getCurrentUser = async (req, res) => {
     var _a;
     try {
         const userId = (_a = req.user) === null || _a === void 0 ? void 0 : _a.id;
+        console.log("userId : ", userId);
         if (!userId) {
             throw new Error('User not authenticated');
         }
         const user = await (0, auth_service_1.getUserById)(userId);
+        console.log("user : ", user);
         if (!user) {
             throw new Error('User not found');
         }
@@ -160,4 +164,14 @@ const getCurrentAdmin = async (req, res) => {
     }
 };
 exports.getCurrentAdmin = getCurrentAdmin;
+const getUserCountController = async (req, res) => {
+    try {
+        const count = await (0, auth_service_1.getUserCount)();
+        res.status(200).json({ success: true, count });
+    }
+    catch (error) {
+        res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to get user count' });
+    }
+};
+exports.getUserCountController = getUserCountController;
 //# sourceMappingURL=auth.controller.js.map
