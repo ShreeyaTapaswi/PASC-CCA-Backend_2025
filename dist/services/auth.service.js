@@ -6,7 +6,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.getUserCount = exports.getAdminById = exports.getUserById = exports.logoutAdmin = exports.logoutUser = exports.loginAdmin = exports.createAdmin = exports.loginUser = exports.createUser = void 0;
 const bcryptjs_1 = __importDefault(require("bcryptjs"));
 const jsonwebtoken_1 = __importDefault(require("jsonwebtoken"));
-const prisma_1 = require("../lib/prisma");
+const prisma_1 = __importDefault(require("../lib/prisma"));
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 const hashPassword = async (password) => {
     const salt = await bcryptjs_1.default.genSalt(10);
@@ -22,12 +22,12 @@ const createTokenWithRetry = async (token, userId, adminId, payload) => {
     try {
         const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
         if (userId) {
-            await prisma_1.prisma.userToken.create({
+            await prisma_1.default.userToken.create({
                 data: { token, expiresAt, user: { connect: { id: userId } } },
             });
         }
         else if (adminId) {
-            await prisma_1.prisma.adminToken.create({
+            await prisma_1.default.adminToken.create({
                 data: { token, expiresAt, admin: { connect: { id: adminId } } },
             });
         }
@@ -45,7 +45,7 @@ const createTokenWithRetry = async (token, userId, adminId, payload) => {
 const createUser = async (userData) => {
     var _a;
     const hashedPassword = await hashPassword(userData.password);
-    const user = await prisma_1.prisma.user.create({
+    const user = await prisma_1.default.user.create({
         data: {
             ...userData,
             password: hashedPassword,
@@ -72,7 +72,7 @@ const createUser = async (userData) => {
 exports.createUser = createUser;
 const loginUser = async (credentials) => {
     var _a;
-    const user = await prisma_1.prisma.user.findUnique({
+    const user = await prisma_1.default.user.findUnique({
         where: { email: credentials.email },
     });
     if (!user) {
@@ -102,7 +102,7 @@ const loginUser = async (credentials) => {
 exports.loginUser = loginUser;
 const createAdmin = async (adminData) => {
     const hashedPassword = await hashPassword(adminData.password);
-    const admin = await prisma_1.prisma.admin.create({
+    const admin = await prisma_1.default.admin.create({
         data: {
             ...adminData,
             password: hashedPassword,
@@ -122,7 +122,7 @@ const createAdmin = async (adminData) => {
 };
 exports.createAdmin = createAdmin;
 const loginAdmin = async (credentials) => {
-    const admin = await prisma_1.prisma.admin.findUnique({
+    const admin = await prisma_1.default.admin.findUnique({
         where: { email: credentials.email },
     });
     if (!admin) {
@@ -147,7 +147,7 @@ const loginAdmin = async (credentials) => {
 exports.loginAdmin = loginAdmin;
 const logoutUser = async (token) => {
     try {
-        await prisma_1.prisma.userToken.delete({
+        await prisma_1.default.userToken.delete({
             where: { token },
         });
     }
@@ -158,7 +158,7 @@ const logoutUser = async (token) => {
 exports.logoutUser = logoutUser;
 const logoutAdmin = async (token) => {
     try {
-        await prisma_1.prisma.adminToken.delete({
+        await prisma_1.default.adminToken.delete({
             where: { token },
         });
     }
@@ -169,7 +169,7 @@ const logoutAdmin = async (token) => {
 exports.logoutAdmin = logoutAdmin;
 const getUserById = async (id) => {
     var _a;
-    const user = await prisma_1.prisma.user.findUnique({
+    const user = await prisma_1.default.user.findUnique({
         where: { id },
     });
     if (!user) {
@@ -188,7 +188,7 @@ const getUserById = async (id) => {
 };
 exports.getUserById = getUserById;
 const getAdminById = async (id) => {
-    const admin = await prisma_1.prisma.admin.findUnique({
+    const admin = await prisma_1.default.admin.findUnique({
         where: { id },
     });
     if (!admin) {
@@ -202,7 +202,7 @@ const getAdminById = async (id) => {
 };
 exports.getAdminById = getAdminById;
 const getUserCount = async () => {
-    const count = await prisma_1.prisma.user.count();
+    const count = await prisma_1.default.user.count();
     return count;
 };
 exports.getUserCount = getUserCount;

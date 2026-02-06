@@ -73,8 +73,10 @@ export const validate = (schema: z.ZodSchema) => {
   return (req: Request, res: Response, next: NextFunction): void => {
     try {
       const result = schema.safeParse(req.body);
-      
+
       if (!result.success) {
+        console.log('❌ Validation failed for request body:', req.body);
+        console.log('❌ Validation errors:', result.error.issues);
         res.status(400).json({
           success: false,
           error: 'Validation failed',
@@ -85,7 +87,7 @@ export const validate = (schema: z.ZodSchema) => {
         });
         return;
       }
-      
+
       next();
     } catch (error) {
       res.status(500).json({
