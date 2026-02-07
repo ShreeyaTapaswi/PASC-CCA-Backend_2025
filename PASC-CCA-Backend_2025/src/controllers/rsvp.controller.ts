@@ -401,14 +401,14 @@ export const getRsvpByEventIdController = async (
       return;
     }
 
-    const result = await getRsvpByEventIdService(userId , eventId);
+    const result = await getRsvpByEventIdService(userId, eventId);
 
     if (!result.success) {
       res.status(404).json(result);
       return
     }
 
-    res.status(200).json(result);return;
+    res.status(200).json(result); return;
   } catch (error) {
     console.error("Controller error:", error);
     res.status(500).json({
@@ -497,7 +497,7 @@ export const updateRsvp = async (req: Request, res: Response) => {
       });
     }
 
-    const result = await UpdateRsvp(userId , eventId, status);
+    const result = await UpdateRsvp(userId, eventId, status);
 
     if (!result.success) {
       return res.status(404).json(result);
@@ -612,7 +612,7 @@ export const deleteRsvp = async (req: Request, res: Response) => {
         .json({ success: false, message: "Invalid RSVP ID" });
     }
 
-    const result = await deleteRsvpById(userId , rsvpId);
+    const result = await deleteRsvpById(userId, rsvpId);
 
     if (!result.success) {
       return res.status(404).json(result);

@@ -12,17 +12,17 @@ export const apiLimiter = rateLimit({
   legacyHeaders: false, // Disable the `X-RateLimit-*` headers
 });
 
-// Strict rate limiter for auth endpoints - 5 requests per 15 minutes
+// Auth rate limiter - 50 requests per 15 minutes (increased for development)
 export const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 5, // Limit each IP to 5 login/register requests per windowMs
+  max: 50, // Limit each IP to 50 login/register requests per windowMs
   message: {
     success: false,
     error: 'Too many authentication attempts, please try again after 15 minutes.'
   },
   standardHeaders: true,
   legacyHeaders: false,
-  skipSuccessfulRequests: false, // Count all requests
+  skipSuccessfulRequests: true, // Only count failed authentication attempts
 });
 
 // Moderate rate limiter for creation endpoints - 20 requests per 15 minutes
@@ -36,4 +36,4 @@ export const createLimiter = rateLimit({
   standardHeaders: true,
   legacyHeaders: false,
 });
-
+//testing in progress

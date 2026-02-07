@@ -46,7 +46,7 @@ export const authenticateToken = async (
 
   try {
     const decoded = jwt.verify(token, JWT_SECRET) as ITokenPayload;
-    
+
     // Validate token exists in database
     if (decoded.type === 'user') {
       const tokenRecord = await prisma.userToken.findFirst({
@@ -58,7 +58,7 @@ export const authenticateToken = async (
       });
 
       if (!tokenRecord) {
-        res.status(403).json({
+        res.status(401).json({
           success: false,
           error: 'Invalid or expired token',
         });
@@ -77,7 +77,7 @@ export const authenticateToken = async (
       });
 
       if (!tokenRecord) {
-        res.status(403).json({
+        res.status(401).json({
           success: false,
           error: 'Invalid or expired token',
         });
@@ -87,10 +87,10 @@ export const authenticateToken = async (
       const adminPayload = { ...decoded, type: 'admin' as const };
       req.admin = adminPayload;
     }
-    
+
     next();
   } catch (error) {
-    res.status(403).json({
+    res.status(401).json({
       success: false,
       error: 'Invalid token',
     });

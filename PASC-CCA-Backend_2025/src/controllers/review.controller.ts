@@ -4,7 +4,8 @@ import {
   getEventReviews,
   getEventReviewStats,
   updateEventReview,
-  deleteEventReview
+  deleteEventReview,
+  getUserEventReview
 } from '../services/review.service';
 
 /**
@@ -97,6 +98,57 @@ export const getReviews = async (req: Request, res: Response): Promise<void> => 
     res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Failed to get reviews'
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/reviews/event/{eventId}/me:
+ *   get:
+ *     summary: Get current user's review for an event
+ *     tags: [Reviews]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: eventId
+ *         required: true
+ *         schema:
+ *           type: integer
+ *     responses:
+ *       200:
+ *         description: Review retrieved successfully
+ *       404:
+ *         description: Review not found
+ */
+export const getUserReview = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    if (!userId) {
+      res.status(401).json({ success: false, message: 'User not authenticated' });
+      return;
+    }
+
+    const eventId = parseInt(req.params.eventId);
+    if (isNaN(eventId)) {
+      res.status(400).json({ success: false, message: 'Invalid event ID' });
+      return;
+    }
+
+    const result = await getUserEventReview(userId, eventId);
+
+    // If not found, meaningful response but 200 with success: false (or 404, but keeping style)
+    if (!result.success) {
+      res.status(200).json({ success: false, message: 'Review not found' });
+      return;
+    }
+
+    res.status(200).json(result);
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to get user review'
     });
   }
 };
@@ -210,7 +262,9 @@ export const updateReview = async (req: Request, res: Response): Promise<void> =
 export const deleteReview = async (req: Request, res: Response): Promise<void> => {
   try {
     const userId = req.user?.id;
-    if (!userId) {
+    const adminId = req.admin?.id;
+
+    if (!userId && !adminId) {
       res.status(401).json({ success: false, message: 'User not authenticated' });
       return;
     }
@@ -221,7 +275,8 @@ export const deleteReview = async (req: Request, res: Response): Promise<void> =
       return;
     }
 
-    const result = await deleteEventReview(userId, reviewId);
+    // If admin is deleting, pass 0 as userId (ignored) and true as isAdmin
+    const result = await deleteEventReview(userId || 0, reviewId, !!adminId);
     res.status(result.success ? 200 : 400).json(result);
   } catch (error) {
     res.status(500).json({
