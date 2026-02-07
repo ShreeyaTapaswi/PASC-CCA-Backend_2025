@@ -19,6 +19,7 @@ export const createEventReview = async (
       };
     }
 
+    /* 
     // Check if user attended the event
     const attendance = await prisma.attendance.findFirst({
       where: {
@@ -35,6 +36,7 @@ export const createEventReview = async (
         message: 'You must attend the event to leave a review'
       };
     }
+    */
 
     // Check if review already exists
     const existingReview = await prisma.eventReview.findUnique({
@@ -133,6 +135,48 @@ export const getEventReviews = async (
   }
 };
 
+// Get user's review for an event
+export const getUserEventReview = async (
+  userId: number,
+  eventId: number
+): Promise<EventReviewResponse> => {
+  try {
+    const review = await prisma.eventReview.findUnique({
+      where: {
+        userId_eventId: {
+          userId,
+          eventId
+        }
+      },
+      include: {
+        user: {
+          select: {
+            id: true,
+            name: true,
+            department: true,
+            year: true
+          }
+        }
+      }
+    });
+
+    if (!review) {
+      return {
+        success: false,
+        message: 'Review not found'
+      };
+    }
+
+    return {
+      success: true,
+      data: review
+    };
+  } catch (error) {
+    console.error('Service error:', error);
+    throw error;
+  }
+};
+
 // Get event review statistics
 export const getEventReviewStats = async (eventId: number): Promise<EventReviewStats> => {
   const reviews = await prisma.eventReview.findMany({
@@ -184,7 +228,7 @@ export const getEventReviewStats = async (eventId: number): Promise<EventReviewS
     averageRating: parseFloat((totalRating / reviews.length).toFixed(2)),
     totalReviews: reviews.length,
     ratingDistribution,
-    averageContentRating: contentRatingCount > 0 
+    averageContentRating: contentRatingCount > 0
       ? parseFloat((totalContentRating / contentRatingCount).toFixed(2))
       : undefined,
     averageSpeakerRating: speakerRatingCount > 0
@@ -247,7 +291,8 @@ export const updateEventReview = async (
 // Delete review
 export const deleteEventReview = async (
   userId: number,
-  reviewId: number
+  reviewId: number,
+  isAdmin: boolean = false
 ): Promise<EventReviewResponse> => {
   try {
     const existingReview = await prisma.eventReview.findUnique({
@@ -261,7 +306,7 @@ export const deleteEventReview = async (
       };
     }
 
-    if (existingReview.userId !== userId) {
+    if (!isAdmin && existingReview.userId !== userId) {
       return {
         success: false,
         message: 'You can only delete your own reviews'

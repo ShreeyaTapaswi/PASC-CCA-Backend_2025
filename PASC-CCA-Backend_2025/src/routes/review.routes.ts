@@ -5,7 +5,8 @@ import {
   getReviews,
   getReviewStats,
   updateReview,
-  deleteReview
+  deleteReview,
+  getUserReview
 } from '../controllers/review.controller';
 import { validate, reviewCreateSchema } from '../middlewares/validation.middleware';
 import { createLimiter, apiLimiter } from '../middlewares/rateLimiter.middleware';
@@ -18,6 +19,7 @@ router.put('/:reviewId', authenticateToken, requireUser, validate(reviewCreateSc
 router.delete('/:reviewId', authenticateToken, requireUser, deleteReview);
 
 // Public routes with rate limiting
+router.get('/event/:eventId/me', authenticateToken, requireUser, getUserReview);
 router.get('/event/:eventId', apiLimiter, getReviews);
 router.get('/event/:eventId/stats', apiLimiter, getReviewStats);
 

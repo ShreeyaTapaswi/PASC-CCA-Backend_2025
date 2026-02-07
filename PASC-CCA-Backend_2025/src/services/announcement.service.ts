@@ -10,13 +10,22 @@ export const createAnnouncement = async (
   announcementData: AnnouncementCreate
 ): Promise<AnnouncementResponse> => {
   try {
+    // Sanitize target audience
+    const targetAudience = { ...announcementData.targetAudience };
+    if (targetAudience.departments && targetAudience.departments.length === 0) {
+      (targetAudience as any).departments = null;
+    }
+    if (targetAudience.years && targetAudience.years.length === 0) {
+      (targetAudience as any).years = null;
+    }
+
     const announcement = await prisma.announcement.create({
       data: {
         adminId,
         title: announcementData.title,
         message: announcementData.message,
         priority: announcementData.priority || AnnouncementPriority.NORMAL,
-        targetAudience: announcementData.targetAudience || {},
+        targetAudience: (targetAudience as any).departments === null && (targetAudience as any).years === null ? {} : targetAudience,
         expiresAt: announcementData.expiresAt
       }
     });
@@ -95,14 +104,16 @@ export const getUserAnnouncements = async (
 
     const currentDate = new Date();
 
+    console.log(`[Debug] Fetching announcements for User: ${userId}, Dept: ${user.department}, Year: ${user.year}`);
+
     // Get announcements that match user's profile
     const announcements = await prisma.announcement.findMany({
       where: {
         AND: [
-        {
-          OR: [
-            { targetAudience: { equals: Prisma.JsonNull } }, // Global announcements
-            { targetAudience: { equals: {} } }, // Empty target
+          {
+            OR: [
+              { targetAudience: { equals: Prisma.JsonNull } }, // Global announcements
+              { targetAudience: { equals: {} } }, // Empty target
               {
                 AND: [
                   {
@@ -141,6 +152,9 @@ export const getUserAnnouncements = async (
       ],
       take: limit
     });
+
+    console.log(`[Debug] Found ${announcements.length} announcements.`);
+    announcements.forEach(a => console.log(`[Debug] Announcement ${a.id}: TargetAudience=${JSON.stringify(a.targetAudience)}`));
 
     // Filter out read announcements if needed
     let filteredAnnouncements = announcements;
@@ -234,13 +248,26 @@ export const updateAnnouncement = async (
   updateData: Partial<AnnouncementCreate>
 ): Promise<AnnouncementResponse> => {
   try {
+    // Sanitize target audience if provided
+    let targetAudience = updateData.targetAudience;
+    if (targetAudience) {
+      const sanitized = { ...targetAudience };
+      if (sanitized.departments && sanitized.departments.length === 0) {
+        (sanitized as any).departments = null;
+      }
+      if (sanitized.years && sanitized.years.length === 0) {
+        (sanitized as any).years = null;
+      }
+      targetAudience = Object.keys(sanitized).length === 0 ? {} : sanitized;
+    }
+
     const announcement = await prisma.announcement.update({
       where: { id: announcementId },
       data: {
         title: updateData.title,
         message: updateData.message,
         priority: updateData.priority,
-        targetAudience: updateData.targetAudience,
+        targetAudience: targetAudience,
         expiresAt: updateData.expiresAt
       }
     });

@@ -18,9 +18,9 @@ import calendarRoutes from './routes/calendar.routes';
 import notificationRoutes from './routes/notification.routes';
 import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
-import { 
-  registerUser, 
-  loginUserController, 
+import {
+  registerUser,
+  loginUserController,
   logoutUserController,
   getCurrentUser,
   registerAdmin,
@@ -37,7 +37,7 @@ dotenv.config();
 const app = express();
 
 app.use(cors({
-  origin: '*', 
+  origin: '*',
   credentials: true,
 }));
 
@@ -102,8 +102,8 @@ async function startServer() {
   await connectDB();
   app.listen(PORT, () => {
     console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
-    
+
   });
 }
-
+//testing in progress
 startServer();

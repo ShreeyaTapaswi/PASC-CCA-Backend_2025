@@ -1,11 +1,16 @@
 import { Request, Response } from 'express';
 import { getAdminAnalytics, getUserAnalytics, getEventAnalytics } from '../services/analytics.service';
+import fs from 'fs';
+import path from 'path';
 
 export const getAdminAnalyticsController = async (req: Request, res: Response): Promise<void> => {
   try {
     const result = await getAdminAnalytics();
     res.status(200).json(result);
   } catch (error) {
+    const logMessage = `[${new Date().toISOString()}] Admin Analytics Error: ${error instanceof Error ? error.message : String(error)}\nStack: ${error instanceof Error ? error.stack : 'N/A'}\n\n`;
+    fs.appendFileSync(path.join(process.cwd(), 'debug_analytics.log'), logMessage);
+
     res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Failed to get analytics'

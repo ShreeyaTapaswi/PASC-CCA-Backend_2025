@@ -48,7 +48,7 @@ export const getAdminAnalytics = async () => {
     const attendanceTrend = await prisma.$queryRaw`
       SELECT 
         DATE_TRUNC('month', "attendedAt") as month,
-        COUNT(*) as count
+        CAST(COUNT(*) AS INTEGER) as count
       FROM "Attendance"
       WHERE "attendedAt" >= ${sixMonthsAgo}
       GROUP BY month
@@ -108,7 +108,7 @@ export const getAdminAnalytics = async () => {
       });
     });
 
-    const attendanceRate = totalRSVPCount > 0 
+    const attendanceRate = totalRSVPCount > 0
       ? ((totalAttendanceCount / totalRSVPCount) * 100).toFixed(2)
       : 0;
 
@@ -202,7 +202,7 @@ export const getUserAnalytics = async (userId: number) => {
     const creditsByMonth = await prisma.$queryRaw`
       SELECT 
         DATE_TRUNC('month', a."attendedAt") as month,
-        SUM(s.credits) as credits
+        CAST(SUM(s.credits) AS INTEGER) as credits
       FROM "Attendance" a
       JOIN "AttendanceSession" s ON a."sessionId" = s.id
       WHERE a."userId" = ${userId} AND a."attendedAt" >= ${sixMonthsAgo}
@@ -265,6 +265,9 @@ export const getEventAnalytics = async (eventId: number) => {
               include: {
                 user: {
                   select: {
+                    id: true,
+                    name: true,
+                    email: true,
                     department: true,
                     year: true
                   }
@@ -273,7 +276,17 @@ export const getEventAnalytics = async (eventId: number) => {
             }
           }
         },
-        reviews: true
+        reviews: {
+          include: {
+            user: {
+              select: {
+                name: true,
+                department: true,
+                year: true
+              }
+            }
+          }
+        }
       }
     });
 
@@ -328,6 +341,26 @@ export const getEventAnalytics = async (eventId: number) => {
       credits: session.credits
     }));
 
+    // Attendance list for "Credits & Attendance" table
+    const attendanceList = event.sessions.flatMap(session =>
+      session.attendances.map(attendance => ({
+        id: attendance.id,
+        userId: attendance.userId,
+        user: {
+          name: attendance.user.name,
+          email: attendance.user.email,
+          department: attendance.user.department,
+          year: attendance.user.year
+        },
+        session: {
+          id: session.id,
+          name: session.sessionName,
+          credits: session.credits
+        },
+        attendedAt: attendance.attendedAt
+      }))
+    );
+
     return {
       success: true,
       data: {
@@ -346,7 +379,7 @@ export const getEventAnalytics = async (eventId: number) => {
         attendanceStats: {
           totalAttendances,
           uniqueAttendees,
-          attendanceRate: confirmedRSVPs > 0 
+          attendanceRate: confirmedRSVPs > 0
             ? ((uniqueAttendees / confirmedRSVPs) * 100).toFixed(2)
             : 0
         },
@@ -356,9 +389,17 @@ export const getEventAnalytics = async (eventId: number) => {
         },
         reviews: {
           averageRating: parseFloat(avgRating as string),
-          totalReviews: event.reviews.length
+          totalReviews: event.reviews.length,
+          list: event.reviews.map(r => ({
+            id: r.id,
+            rating: r.rating,
+            review: r.review,
+            createdAt: r.createdAt,
+            user: r.anonymous ? null : (r as any).user
+          }))
         },
-        sessions: sessionStats
+        sessions: sessionStats,
+        attendanceList // New field
       }
     };
   } catch (error) {
