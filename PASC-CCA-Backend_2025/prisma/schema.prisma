@@ -1,0 +1,320 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Department {
+  CE
+  IT
+  ENTC
+  ECE
+  AIDS
+}
+
+model User {
+  id          Int          @id @default(autoincrement())
+  name        String?
+  email       String       @unique
+  password    String
+  department  Department
+  year        Int
+  passoutYear Int
+  roll        Int
+  hours       Float        @default(0)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  rsvps       Rsvp[]
+  attendances Attendance[]
+  tokens      UserToken[]
+  reviews     EventReview[]
+  notifications Notification[]
+  readAnnouncements UserAnnouncementRead[]
+}
+
+model Admin {
+  id        Int          @id @default(autoincrement())
+  name      String?
+  email     String       @unique
+  password  String
+  createdAt DateTime     @default(now())
+  updatedAt DateTime     @updatedAt
+  tokens    AdminToken[]
+  announcements Announcement[]
+}
+
+model Event {
+  id          Int                 @id @default(autoincrement())
+  title       String
+  description String
+  location    String
+  credits     Float
+  capacity    Int
+  numDays     Int
+  status      EventStatus
+  startDate   DateTime
+  endDate     DateTime
+  imageUrl    String?
+  createdAt   DateTime            @default(now())
+  updatedAt   DateTime            @updatedAt
+  rsvps       Rsvp[]
+  prerequisite String?
+  sessions    AttendanceSession[]
+  reviews     EventReview[]
+  resources   EventResource[]
+  gallery     EventGallery[]
+  
+  @@index([status])
+  @@index([startDate])
+}
+
+model Rsvp {
+  id        Int        @id @default(autoincrement())
+  user      User       @relation(fields: [userId], references: [id])
+  userId    Int
+  status    RsvpStatus
+  event     Event      @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId   Int
+  waitlisted Boolean   @default(false)
+  waitlistPosition Int?
+  createdAt DateTime   @default(now())
+  updatedAt DateTime   @updatedAt
+
+  @@unique([userId, eventId])
+  @@index([eventId, status])
+}
+
+model AttendanceSession {
+  id          Int          @id @default(autoincrement())
+  event       Event        @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     Int
+  startTime   DateTime     @default(now())
+  endTime     DateTime?
+  isActive    Boolean      @default(false)
+  sessionName String
+  code        String
+  location    String
+  credits     Int         @default(0)
+  attendances Attendance[]
+
+}
+
+model Attendance {
+  id         Int               @id @default(autoincrement())
+  user       User              @relation(fields: [userId], references: [id])
+  userId     Int
+  session    AttendanceSession @relation(fields: [sessionId], references: [id], onDelete: Cascade)
+  sessionId  Int
+  attendedAt DateTime          @default(now())
+  
+  @@unique([userId, sessionId])
+  @@index([userId])
+  @@index([sessionId])
+}
+
+model UserToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  user      User     @relation(fields: [userId], references: [id])
+  userId    Int
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+model AdminToken {
+  id        Int      @id @default(autoincrement())
+  token     String   @unique
+  admin     Admin    @relation(fields: [adminId], references: [id])
+  adminId   Int
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+enum EventStatus {
+  UPCOMING
+  ONGOING
+  COMPLETED
+}
+
+enum RsvpStatus {
+  ATTENDING
+  NOT_ATTENDING
+}
+
+// Event Reviews and Ratings
+model EventReview {
+  id          Int      @id @default(autoincrement())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     Int
+  user        User     @relation(fields: [userId], references: [id])
+  userId      Int
+  rating      Int      // 1-5
+  review      String?
+  contentRating     Int?  // 1-5
+  speakerRating     Int?  // 1-5
+  organizationRating Int? // 1-5
+  anonymous   Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  @@unique([userId, eventId])
+  @@index([eventId])
+}
+
+// Event Resources (slides, videos, code, etc.)
+model EventResource {
+  id          Int      @id @default(autoincrement())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     Int
+  title       String
+  description String?
+  type        ResourceType
+  url         String
+  fileSize    Int?     // in bytes
+  uploadedAt  DateTime @default(now())
+  
+  @@index([eventId])
+}
+
+enum ResourceType {
+  SLIDES
+  VIDEO
+  CODE
+  DOCUMENT
+  LINK
+  OTHER
+}
+
+// Event Gallery
+model EventGallery {
+  id          Int      @id @default(autoincrement())
+  event       Event    @relation(fields: [eventId], references: [id], onDelete: Cascade)
+  eventId     Int
+  imageUrl    String
+  caption     String?
+  uploadedAt  DateTime @default(now())
+  
+  @@index([eventId])
+}
+
+// Leaderboard
+model Leaderboard {
+  id        Int      @id @default(autoincrement())
+  userId    Int
+  rank      Int
+  credits   Float
+  eventsAttended Int
+  period    LeaderboardPeriod
+  year      Int
+  month     Int?     // For monthly leaderboards
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@unique([userId, period, year, month])
+  @@index([period, year, month, rank])
+}
+
+enum LeaderboardPeriod {
+  WEEKLY
+  MONTHLY
+  SEMESTER
+  YEARLY
+  ALL_TIME
+}
+
+// Announcements
+model Announcement {
+  id          Int      @id @default(autoincrement())
+  admin       Admin    @relation(fields: [adminId], references: [id])
+  adminId     Int
+  title       String
+  message     String
+  priority    AnnouncementPriority @default(NORMAL)
+  targetAudience Json?  // {departments: [], years: []}
+  expiresAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  readBy      UserAnnouncementRead[]
+  
+  @@index([createdAt])
+  @@index([priority])
+}
+
+enum AnnouncementPriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+model UserAnnouncementRead {
+  id             Int          @id @default(autoincrement())
+  user           User         @relation(fields: [userId], references: [id])
+  userId         Int
+  announcement   Announcement @relation(fields: [announcementId], references: [id], onDelete: Cascade)
+  announcementId Int
+  readAt         DateTime     @default(now())
+  
+  @@unique([userId, announcementId])
+  @@index([userId])
+}
+
+// Notifications
+model Notification {
+  id        Int              @id @default(autoincrement())
+  user      User             @relation(fields: [userId], references: [id])
+  userId    Int
+  type      NotificationType
+  title     String
+  message   String
+  data      Json?            // Additional data (eventId, etc.)
+  read      Boolean          @default(false)
+  sentAt    DateTime         @default(now())
+  readAt    DateTime?
+  
+  @@index([userId, read])
+  @@index([sentAt])
+}
+
+enum NotificationType {
+  EVENT_REMINDER
+  EVENT_CREATED
+  EVENT_UPDATED
+  EVENT_CANCELLED
+  RSVP_CONFIRMED
+  WAITLIST_PROMOTED
+  ATTENDANCE_MARKED
+  ANNOUNCEMENT
+  ACHIEVEMENT
+  GENERAL
+}
+
+// Email Queue for async email sending
+model EmailQueue {
+  id          Int      @id @default(autoincrement())
+  to          String
+  subject     String
+  body        String
+  template    String?
+  data        Json?
+  status      EmailStatus @default(PENDING)
+  attempts    Int      @default(0)
+  lastError   String?
+  createdAt   DateTime @default(now())
+  sentAt      DateTime?
+  
+  @@index([status, createdAt])
+}
+
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+  CANCELLED
+}
