@@ -55,6 +55,17 @@ export const getAdminAnalytics = async () => {
       ORDER BY month ASC
     `;
 
+    // Global Average Rating
+    const reviews = await prisma.eventReview.aggregate({
+      _avg: {
+        rating: true
+      }
+    });
+
+    const averageEventRating = reviews._avg.rating
+      ? parseFloat(reviews._avg.rating.toFixed(1))
+      : 0;
+
     // Top performing events (by attendance)
     const topEvents = await prisma.event.findMany({
       take: 5,
@@ -71,6 +82,11 @@ export const getAdminAnalytics = async () => {
         _count: {
           select: {
             rsvps: true
+          }
+        },
+        reviews: {
+          select: {
+            rating: true
           }
         }
       },
@@ -120,7 +136,8 @@ export const getAdminAnalytics = async () => {
           totalEvents,
           totalAttendances,
           totalRSVPs,
-          attendanceRate: parseFloat(attendanceRate as string)
+          attendanceRate: parseFloat(attendanceRate as string),
+          averageEventRating // Added field
         },
         eventsByStatus: eventsByStatus.reduce((acc, item) => {
           acc[item.status] = item._count;
@@ -140,12 +157,19 @@ export const getAdminAnalytics = async () => {
           sessionCount: event._count.sessions
         })),
         attendanceTrend,
-        topEvents: topEvents.map(event => ({
-          id: event.id,
-          title: event.title,
-          rsvpCount: event._count.rsvps,
-          totalAttendance: event.sessions.reduce((sum, s) => sum + s._count.attendances, 0)
-        }))
+        topEvents: topEvents.map(event => {
+          const avgRating = event.reviews.length > 0
+            ? event.reviews.reduce((sum, r) => sum + r.rating, 0) / event.reviews.length
+            : 0;
+
+          return {
+            id: event.id,
+            title: event.title,
+            rsvpCount: event._count.rsvps,
+            totalAttendance: event.sessions.reduce((sum, s) => sum + s._count.attendances, 0),
+            rating: parseFloat(avgRating.toFixed(1)) // Added field
+          };
+        })
       }
     };
   } catch (error) {
@@ -390,13 +414,21 @@ export const getEventAnalytics = async (eventId: number) => {
         reviews: {
           averageRating: parseFloat(avgRating as string),
           totalReviews: event.reviews.length,
-          list: event.reviews.map(r => ({
-            id: r.id,
-            rating: r.rating,
-            review: r.review,
-            createdAt: r.createdAt,
-            user: r.anonymous ? null : (r as any).user
-          }))
+          list: event.reviews.map(r => {
+            console.log('=== MAPPING REVIEW ===');
+            console.log('Review ID:', r.id);
+            console.log('Rating:', r.rating);
+            console.log('Anonymous:', r.anonymous);
+            console.log('User:', (r as any).user);
+            console.log('=====================');
+            return {
+              id: r.id,
+              rating: r.rating,
+              review: r.review,
+              createdAt: r.createdAt,
+              user: r.anonymous ? null : (r as any).user
+            };
+          })
         },
         sessions: sessionStats,
         attendanceList // New field
