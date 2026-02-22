@@ -2,12 +2,37 @@ import { prisma } from '../lib/prisma';
 import { LeaderboardPeriod, Department } from '@prisma/client';
 import { LeaderboardEntry, LeaderboardResponse, LeaderboardQuery } from '../types/leaderboard.types';
 
+/** Shape of user with attendances from getLeaderboard query */
+type UserWithAttendances = {
+  id: number;
+  name: string | null;
+  department: Department;
+  year: number;
+  roll: number;
+  hours: number;
+  attendances: Array<{ session: { credits: number } }>;
+};
+
+/** Shape of user summary for cached leaderboard */
+type UserSummary = {
+  id: number;
+  name: string | null;
+  department: Department;
+  year: number;
+};
+
+/** Division is 2nd and 3rd digits of roll number (e.g. 10809 → 08 → division 8). */
+export const getDivisionFromRoll = (roll: number): number => {
+  const s = String(roll).padStart(5, '0');
+  return parseInt(s.slice(1, 3), 10) || 0;
+};
+
 // Get leaderboard
 export const getLeaderboard = async (
   query: LeaderboardQuery
 ): Promise<LeaderboardResponse> => {
   try {
-    const { period, year, month, department, limit = 50 } = query;
+    const { period, year, month, department, division, limit = 50 } = query;
 
     // Build date filter based on period
     let dateFilter: any = {};
@@ -44,14 +69,15 @@ export const getLeaderboard = async (
         break;
     }
 
-    // Get users with their attendance data
-    const users = await prisma.user.findMany({
+    // Get users with their attendance data (include roll for division filter)
+    const usersRaw = await prisma.user.findMany({
       where: department ? { department: department as Department } : {},
       select: {
         id: true,
         name: true,
         department: true,
         year: true,
+        roll: true,
         hours: true,
         attendances: {
           where: Object.keys(dateFilter).length > 0 ? {
@@ -66,12 +92,17 @@ export const getLeaderboard = async (
           }
         }
       }
-    });
+    }) as UserWithAttendances[];
+
+    // Division filter: only for first year. Division = 2nd & 3rd digits of roll (e.g. 10809 → 08 → division 8). Years 2–4 have no division-wise leaderboard.
+    const users = division != null && division >= 1 && division <= 13
+      ? usersRaw.filter((u: UserWithAttendances) => u.year === 1 && u.roll != null && getDivisionFromRoll(u.roll) === division)
+      : usersRaw;
 
     // Calculate credits and events attended for each user
-    const leaderboardData: LeaderboardEntry[] = users.map(user => {
-      const credits = user.attendances.reduce((sum, att) => sum + att.session.credits, 0);
-      const eventsAttended = new Set(user.attendances.map(att => att.session.credits)).size;
+    const leaderboardData: LeaderboardEntry[] = users.map((user: UserWithAttendances) => {
+      const credits = user.attendances.reduce((sum: number, att: { session: { credits: number } }) => sum + att.session.credits, 0);
+      const eventsAttended = new Set(user.attendances.map((att: { session: { credits: number } }) => att.session.credits)).size;
 
       return {
         userId: user.id,
@@ -103,12 +134,13 @@ export const getLeaderboard = async (
   }
 };
 
-// Get user's rank
+// Get user's rank (optionally within a division)
 export const getUserRank = async (
   userId: number,
-  period: LeaderboardPeriod = LeaderboardPeriod.ALL_TIME
+  period: LeaderboardPeriod = LeaderboardPeriod.ALL_TIME,
+  division?: number
 ): Promise<{ rank: number; totalUsers: number; credits: number }> => {
-  const leaderboard = await getLeaderboard({ period, limit: 10000 });
+  const leaderboard = await getLeaderboard({ period, division, limit: 10000 });
   
   if (!leaderboard.data) {
     return { rank: 0, totalUsers: 0, credits: 0 };
@@ -175,22 +207,22 @@ export const getCachedLeaderboard = async (
     }
 
     // Fetch user details
-    const userIds = cachedData.map(entry => entry.userId);
+    const userIds = cachedData.map((entry: { userId: number }) => entry.userId);
     const users = await prisma.user.findMany({
       where: { id: { in: userIds } },
       select: { id: true, name: true, department: true, year: true }
-    });
-    
-    const userMap = new Map(users.map(u => [u.id, u]));
+    }) as UserSummary[];
 
-    const leaderboardData: LeaderboardEntry[] = cachedData.map(entry => {
+    const userMap = new Map<number, UserSummary>(users.map((u: UserSummary) => [u.id, u]));
+
+    const leaderboardData: LeaderboardEntry[] = cachedData.map((entry: { userId: number; rank: number; credits: number; eventsAttended: number }) => {
       const user = userMap.get(entry.userId);
       return {
         rank: entry.rank,
         userId: entry.userId,
-        userName: user?.name || 'Anonymous',
-        department: user?.department || 'CE',
-        year: user?.year || 1,
+        userName: user?.name ?? 'Anonymous',
+        department: user?.department ?? 'CE',
+        year: user?.year ?? 1,
         credits: entry.credits,
         eventsAttended: entry.eventsAttended
       };

@@ -18,6 +18,7 @@ import calendarRoutes from './routes/calendar.routes';
 import notificationRoutes from './routes/notification.routes';
 import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
+import { deleteOldNotifications, NOTIFICATION_EXPIRY_DAYS } from './services/notification.service';
 import {
   registerUser,
   loginUserController,
@@ -101,11 +102,29 @@ async function connectDB() {
 }
 console.log(PORT);
 
+/** Run notification cleanup: delete notifications older than NOTIFICATION_EXPIRY_DAYS. */
+async function runNotificationCleanup() {
+  try {
+    const result = await deleteOldNotifications(NOTIFICATION_EXPIRY_DAYS);
+    if (result.count > 0) {
+      console.log(`[Notifications] Deleted ${result.count} expired notifications (older than ${NOTIFICATION_EXPIRY_DAYS} days).`);
+    }
+  } catch (err) {
+    console.error('[Notifications] Cleanup failed:', err);
+  }
+}
+
+/** Interval for notification cleanup (every 6 hours). */
+const NOTIFICATION_CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
+
 async function startServer() {
   await connectDB();
+
+  await runNotificationCleanup();
+  setInterval(runNotificationCleanup, NOTIFICATION_CLEANUP_INTERVAL_MS);
+
   app.listen(PORT, () => {
     console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
-
   });
 }
 //testing in progress

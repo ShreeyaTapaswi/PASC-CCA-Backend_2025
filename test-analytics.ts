@@ -1,15 +1,36 @@
+// import { getAdminAnalytics } from './src/services/analytics.service';
+
+// async function test() {
+//     try {
+//         console.log('Fetching admin analytics...');
+//         const result = await getAdminAnalytics();
+//         console.log('Result:', JSON.stringify(result, null, 2));
+//     } catch (error) {
+//         console.error('Error caught in test script:');
+//         console.error(error);
+//     } finally {
+//         process.exit();
+//     }
+// }
+
+// test();
+
+
 import { getAdminAnalytics } from './src/services/analytics.service';
+import { prisma } from './src/lib/prisma';
+import dotenv from 'dotenv';
+
+dotenv.config();
 
 async function test() {
     try {
-        console.log('Fetching admin analytics...');
+        console.log('Testing getAdminAnalytics...');
         const result = await getAdminAnalytics();
         console.log('Result:', JSON.stringify(result, null, 2));
     } catch (error) {
-        console.error('Error caught in test script:');
-        console.error(error);
+        console.error('Error in getAdminAnalytics:', error);
     } finally {
-        process.exit();
+        await prisma.$disconnect();
     }
 }
 

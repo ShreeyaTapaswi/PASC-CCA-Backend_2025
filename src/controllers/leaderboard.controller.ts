@@ -8,9 +8,12 @@ export const getLeaderboardController = async (req: Request, res: Response): Pro
     const year = req.query.year ? parseInt(req.query.year as string) : new Date().getFullYear();
     const month = req.query.month ? parseInt(req.query.month as string) : undefined;
     const department = req.query.department as string | undefined;
+    const division = req.query.division !== undefined && req.query.division !== ''
+      ? parseInt(req.query.division as string, 10)
+      : undefined;
     const limit = req.query.limit ? parseInt(req.query.limit as string) : 50;
 
-    const result = await getLeaderboard({ period, year, month, department, limit });
+    const result = await getLeaderboard({ period, year, month, department, division, limit });
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({
@@ -29,7 +32,10 @@ export const getUserRankController = async (req: Request, res: Response): Promis
     }
 
     const period = (req.query.period as LeaderboardPeriod) || LeaderboardPeriod.ALL_TIME;
-    const result = await getUserRank(userId, period);
+    const division = req.query.division !== undefined && req.query.division !== ''
+      ? parseInt(req.query.division as string, 10)
+      : undefined;
+    const result = await getUserRank(userId, period, division);
     res.status(200).json({ success: true, data: result });
   } catch (error) {
     res.status(500).json({
