@@ -125,14 +125,14 @@ export const createAttendanceSession = async (
     const eventId = parseInt(req.params.eventId);
     const sessionData = req.body;
 
-     if (isNaN(eventId)) {
+    if (isNaN(eventId)) {
       res.status(400).json({ success: false, message: 'Invalid event ID' });
       return;
     }
-    
+
     const result = await createSessionService(eventId, sessionData);
 
-   res.status(201).json(result);
+    res.status(201).json(result);
 
   } catch (error) {
     res.status(400).json({
@@ -251,14 +251,14 @@ export const updateAttendanceSession = async (
     const sessionId = parseInt(req.params.sessionId);
     const sessionData = req.body;
     console.log(sessionId);
-     if (isNaN(sessionId)) {
+    if (isNaN(sessionId)) {
       res.status(400).json({ success: false, message: 'Invalid session ID' });
       return;
     }
-    
+
     const result = await updateSessionService(sessionId, sessionData);
 
-   res.status(201).json(result);
+    res.status(201).json(result);
 
   } catch (error) {
     res.status(400).json({
@@ -510,27 +510,27 @@ export const getAttendanceSessionStats = async (
  */
 
 
-export const markAttendanceForSession = async(req : Request , res : Response) : Promise<void>=>{
-  try{
-  const userId = req.user?.id;
-  const { code } = req.body; 
-  if (!userId) {
-     res.status(401).json({ message: "User not authenticated" });
-     return;
-  }
-  const sessionId = parseInt(req.params.sessionId);
-  const eventId = parseInt(req.params.eventId);
-  
+export const markAttendanceForSession = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const userId = req.user?.id;
+    const { code } = req.body;
+    if (!userId) {
+      res.status(401).json({ message: "User not authenticated" });
+      return;
+    }
+    const sessionId = parseInt(req.params.sessionId);
+    const eventId = parseInt(req.params.eventId);
 
-  const result = await markSession(userId, sessionId, code,eventId);
-   res.status(200).json(result);
-   return ;
+
+    const result = await markSession(userId, sessionId, code, eventId);
+    res.status(200).json(result);
+    return;
   } catch (error: any) {
-     res.status(400).json({ success: false, message: error.message });
-     return;
+    res.status(400).json({ success: false, message: error.message });
+    return;
   }
 }
-  
+
 /**
  * @swagger
  * /api/attendance/events/{eventId}/sessions/attendance:
@@ -567,7 +567,7 @@ export const markAttendanceForSession = async(req : Request , res : Response) : 
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-export const getUserAttendanceSessionStats = async(req : Request , res : Response) : Promise<void>=>{
+export const getUserAttendanceSessionStats = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user?.id;
   const eventId = parseInt(req.params.eventId);
   if (!userId) {
@@ -575,7 +575,7 @@ export const getUserAttendanceSessionStats = async(req : Request , res : Respons
     return;
   }
   try {
-    const stats = await getUserAttendanceSessionStatsService(userId , eventId);
+    const stats = await getUserAttendanceSessionStatsService(userId, eventId);
     res.status(200).json(stats);
   } catch (error) {
     res.status(404).json({
@@ -622,22 +622,21 @@ export const getUserAttendanceSessionStats = async(req : Request , res : Respons
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-export const getUserStats = async(req : Request , res : Response) : Promise<void> =>{
+export const getUserStats = async (req: Request, res: Response): Promise<void> => {
   const userId = req.user?.id;
-   if (!userId) {
+  if (!userId) {
     res.status(401).json({ message: "User not authenticated" });
     return;
   }
-  try{
+  try {
     const data = await getUserAttendanceStats(userId);
     res.json(data).status(200);
     return;
   }
-  catch(e)
-  {
+  catch (e) {
     res.status(404).json({
       success: false,
-      message : e instanceof Error ? e.message : 'Failed to get user attendance stats',
+      message: e instanceof Error ? e.message : 'Failed to get user attendance stats',
     });
     return;
   }
@@ -680,7 +679,7 @@ export const getUserStats = async(req : Request , res : Response) : Promise<void
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-export const getSessionsForUserByEventId = async(req : Request , res : Response) : Promise<void> => {
+export const getSessionsForUserByEventId = async (req: Request, res: Response): Promise<void> => {
   try {
     const eventId = Number(req.params.eventId);
     const userId = req.user?.id;
@@ -691,12 +690,12 @@ export const getSessionsForUserByEventId = async(req : Request , res : Response)
       });
       return;
     }
-    const response = await getSessionsForUser(eventId , userId as number);
+    const response = await getSessionsForUser(eventId, userId as number);
     res.status(200).json(response);
-  } catch(e) {
+  } catch (e) {
     res.status(404).json({
       success: false,
-      message : e instanceof Error ? e.message : 'Failed to get user attendance stats',
+      message: e instanceof Error ? e.message : 'Failed to get user attendance stats',
     });
     return;
   }
@@ -806,6 +805,30 @@ export const getSessionsByEventId = async (req: Request, res: Response): Promise
     res.status(500).json({
       success: false,
       message: error instanceof Error ? error.message : 'Failed to fetch attendance sessions',
+    });
+  }
+};
+
+export const exportAttendanceSessionsToExcel = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const eventId = parseInt(req.params.eventId);
+    if (isNaN(eventId)) {
+      res.status(400).json({ success: false, message: 'Invalid event ID' });
+      return;
+    }
+
+    // Dynamic import to avoid circular dependency issues at the top of the file
+    const { exportSessionsToExcel } = await import('../services/attendance.service');
+    const { buffer, filename } = await exportSessionsToExcel(eventId);
+
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.send(buffer);
+  } catch (error) {
+    console.error('Export Error:', error);
+    res.status(500).json({
+      success: false,
+      message: error instanceof Error ? error.message : 'Failed to export to Excel',
     });
   }
 };
