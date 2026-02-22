@@ -1,28 +1,101 @@
-# version: '3.8'
+ # # version: '3.8'
 
+# # services:
+# #   # PostgreSQL Database
+# #   postgres:
+# #     image: postgres:15-alpine
+# #     container_name: pasc-cca-db
+# #     restart: unless-stopped
+# #     environment:
+# #       POSTGRES_USER: ${POSTGRES_USER:-pasc_user}
+# #       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pasc_password}
+# #       POSTGRES_DB: ${POSTGRES_DB:-pasc_cca_2025}
+# #       PGDATA: /var/lib/postgresql/data/pgdata
+# #     volumes:
+# #       - postgres_data:/var/lib/postgresql/data
+# #     ports:
+# #       - "${POSTGRES_PORT:-5432}:5432"
+# #     networks:
+# #       - pasc-network
+# #     healthcheck:
+# #       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pasc_user} -d ${POSTGRES_DB:-pasc_cca_2025}"]
+# #       interval: 10s
+# #       timeout: 5s
+# #       retries: 5
+
+# #   # Backend Application
+# #   app:
+# #     build:
+# #       context: .
+# #       dockerfile: Dockerfile
+# #     container_name: pasc-cca-backend
+# #     restart: unless-stopped
+# #     depends_on:
+# #       postgres:
+# #         condition: service_healthy
+# #     environment:
+# #       NODE_ENV: ${NODE_ENV:-production}
+# #       PORT: ${PORT:-4000}
+# #       # DATABASE_URL: postgresql://${POSTGRES_USER:-pasc_user}:${POSTGRES_PASSWORD:-pasc_password}@postgres:5432/${POSTGRES_DB:-pasc_cca_2025}?schema=public
+
+# #       DATABASE_URL: postgresql://neondb_owner:npg_exLqB8RkUa4H@ep-dry-cell-a1bhu2td-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
+
+      
+# #       JWT_SECRET: ${JWT_SECRET}
+# #       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
+# #       SMTP_HOST: ${SMTP_HOST:-smtp.gmail.com}
+# #       SMTP_PORT: ${SMTP_PORT:-587}
+# #       SMTP_SECURE: ${SMTP_SECURE:-false}
+# #       SMTP_USER: ${SMTP_USER}
+# #       SMTP_PASS: ${SMTP_PASS}
+# #     ports:
+# #       - "${APP_PORT:-4000}:${PORT:-4000}"
+# #     networks:
+# #       - pasc-network
+# #     command: >
+# #       sh -c "
+# #         echo '🔄 Waiting for database...' &&
+# #         npx prisma migrate deploy &&
+# #         echo '✅ Migrations completed!' &&
+# #         echo '🚀 Starting application...' &&
+# #         node dist/index.js
+# #       "
+# #     healthcheck:
+# #       test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/api/events', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+# #       interval: 30s
+# #       timeout: 10s
+# #       start_period: 40s
+# #       retries: 3
+
+# #   # PgAdmin (Optional - for database management)
+# #   pgadmin:
+# #     image: dpage/pgadmin4:latest
+# #     container_name: pasc-cca-pgadmin
+# #     restart: unless-stopped
+# #     environment:
+# #       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@pasc.com}
+# #       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
+# #       PGADMIN_LISTEN_PORT: 80
+# #     ports:
+# #       - "${PGADMIN_PORT:-5050}:80"
+# #     networks:
+# #       - pasc-network
+# #     depends_on:
+# #       - postgres
+# #     profiles:
+# #       - tools
+
+# # volumes:
+# #   postgres_data:
+# #     driver: local
+
+# # networks:
+# #   pasc-network:
+# #     driver: bridge
+
+
+# # Note: 'version' is removed as it's obsolete in Docker Compose V2
 # services:
-#   # PostgreSQL Database
-#   postgres:
-#     image: postgres:15-alpine
-#     container_name: pasc-cca-db
-#     restart: unless-stopped
-#     environment:
-#       POSTGRES_USER: ${POSTGRES_USER:-pasc_user}
-#       POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-pasc_password}
-#       POSTGRES_DB: ${POSTGRES_DB:-pasc_cca_2025}
-#       PGDATA: /var/lib/postgresql/data/pgdata
-#     volumes:
-#       - postgres_data:/var/lib/postgresql/data
-#     ports:
-#       - "${POSTGRES_PORT:-5432}:5432"
-#     networks:
-#       - pasc-network
-#     healthcheck:
-#       test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-pasc_user} -d ${POSTGRES_DB:-pasc_cca_2025}"]
-#       interval: 10s
-#       timeout: 5s
-#       retries: 5
-
 #   # Backend Application
 #   app:
 #     build:
@@ -30,16 +103,13 @@
 #       dockerfile: Dockerfile
 #     container_name: pasc-cca-backend
 #     restart: unless-stopped
-#     depends_on:
-#       postgres:
-#         condition: service_healthy
+#     # Removed depends_on because we are using Neon (Cloud)
 #     environment:
-#       NODE_ENV: ${NODE_ENV:-production}
+#       NODE_ENV: ${NODE_ENV:-development}
 #       PORT: ${PORT:-4000}
-#       # DATABASE_URL: postgresql://${POSTGRES_USER:-pasc_user}:${POSTGRES_PASSWORD:-pasc_password}@postgres:5432/${POSTGRES_DB:-pasc_cca_2025}?schema=public
-
-#       DATABASE_URL: postgresql://neondb_owner:npg_exLqB8RkUa4H@ep-dry-cell-a1bhu2td-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require&channel_binding=require
-
+      
+#       # Use your Neon URL
+#       DATABASE_URL: postgresql://neondb_owner:npg_exLqB8RkUa4H@ep-dry-cell-a1bhu2td-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
       
 #       JWT_SECRET: ${JWT_SECRET}
 #       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
@@ -54,44 +124,27 @@
 #       - pasc-network
 #     command: >
 #       sh -c "
-#         echo '🔄 Waiting for database...' &&
-#         npx prisma migrate deploy &&
-#         echo '✅ Migrations completed!' &&
+#         echo '🔄 Synchronizing database schema...' &&
+#         npx prisma db push --skip-generate &&
+#         echo '✅ Schema synchronized!' &&
 #         echo '🚀 Starting application...' &&
 #         node dist/index.js
 #       "
 #     healthcheck:
+#       # Updated healthcheck to point to your actual local container port
 #       test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/api/events', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
 #       interval: 30s
 #       timeout: 10s
 #       start_period: 40s
 #       retries: 3
 
-#   # PgAdmin (Optional - for database management)
-#   pgadmin:
-#     image: dpage/pgadmin4:latest
-#     container_name: pasc-cca-pgadmin
-#     restart: unless-stopped
-#     environment:
-#       PGADMIN_DEFAULT_EMAIL: ${PGADMIN_EMAIL:-admin@pasc.com}
-#       PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_PASSWORD:-admin}
-#       PGADMIN_LISTEN_PORT: 80
-#     ports:
-#       - "${PGADMIN_PORT:-5050}:80"
-#     networks:
-#       - pasc-network
-#     depends_on:
-#       - postgres
-#     profiles:
-#       - tools
-
-# volumes:
-#   postgres_data:
-#     driver: local
-
 # networks:
 #   pasc-network:
 #     driver: bridge
+
+
+
+
 
 
 # Note: 'version' is removed as it's obsolete in Docker Compose V2
@@ -103,13 +156,12 @@ services:
       dockerfile: Dockerfile
     container_name: pasc-cca-backend
     restart: unless-stopped
-    # Removed depends_on because we are using Neon (Cloud)
     environment:
       NODE_ENV: ${NODE_ENV:-development}
       PORT: ${PORT:-4000}
       
-      # Use your Neon URL
-      DATABASE_URL: postgresql://neondb_owner:npg_exLqB8RkUa4H@ep-dry-cell-a1bhu2td-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require
+      # Use DATABASE_URL from .env file
+      DATABASE_URL: ${DATABASE_URL}
       
       JWT_SECRET: ${JWT_SECRET}
       FRONTEND_URL: ${FRONTEND_URL:-http://localhost:3000}
@@ -122,6 +174,13 @@ services:
       - "${APP_PORT:-4000}:${PORT:-4000}"
     networks:
       - pasc-network
+    # Add DNS servers for better external connectivity on Windows
+    dns:
+      - 8.8.8.8
+      - 8.8.4.4
+    # Allow container to reach host.docker.internal
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
     command: >
       sh -c "
         echo '🔄 Synchronizing database schema...' &&
@@ -131,7 +190,6 @@ services:
         node dist/index.js
       "
     healthcheck:
-      # Updated healthcheck to point to your actual local container port
       test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/api/events', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 10s
