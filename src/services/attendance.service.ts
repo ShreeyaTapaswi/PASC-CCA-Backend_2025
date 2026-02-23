@@ -3,6 +3,7 @@ import { AttendanceSessionCreate, AttendanceSessionResponse, AttendanceSessionWi
 import { prisma } from '../lib/prisma';
 import { sendAttendanceMarkedEmail } from './email.service';
 import { notifyAttendanceMarked } from './notification.service';
+import exceljs from 'exceljs';
 
 export const createSessionService = async (eventId: number, data: AttendanceSessionCreate): Promise<AttendanceSessionResponse> => {
   const { startTime, endTime, location, sessionName, isActive, credits } = data;
@@ -52,7 +53,7 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
       location: session.location,
       sessionName: session.sessionName,
       isActive: session.isActive,
-      credits : session.credits
+      credits: session.credits
     }
 
   };
@@ -63,7 +64,7 @@ export const updateSessionService = async (
   sessionId: number,
   data: AttendanceSessionCreate
 ): Promise<AttendanceSessionResponse> => {
-  const { startTime, endTime, location, sessionName, isActive  , credits} = data;
+  const { startTime, endTime, location, sessionName, isActive, credits } = data;
 
   const session = await prisma.attendanceSession.findUnique({
     where: { id: sessionId },
@@ -81,7 +82,7 @@ export const updateSessionService = async (
       location: location !== undefined ? location : undefined,
       sessionName: sessionName !== undefined ? sessionName : undefined,
       isActive: typeof isActive === 'boolean' ? isActive : undefined,
-      credits : credits
+      credits: credits
     },
   });
 
@@ -96,7 +97,7 @@ export const updateSessionService = async (
       location: updatedSession.location,
       code: updatedSession.code,
       isActive: updatedSession.isActive,
-      credits : updatedSession.credits
+      credits: updatedSession.credits
     },
   };
 };
@@ -350,7 +351,7 @@ export const getUserAttendanceSessionStatsService = async (userId: number, event
     code: session.code,
     location: session.location,
     sessionName: session.sessionName,
-    credits:session.credits,
+    credits: session.credits,
     present: presentSessionIds.has(session.id)
   }));
 
@@ -364,10 +365,10 @@ export const getUserAttendanceSessionStatsService = async (userId: number, event
 
 }
 
-export const getSessionsForUser = async(eventId : number , userId  : number) : Promise<AttendanceSessionWithEventForUser> => {
-  const event  = await prisma.event.findUnique({
-    where : {
-      id : eventId
+export const getSessionsForUser = async (eventId: number, userId: number): Promise<AttendanceSessionWithEventForUser> => {
+  const event = await prisma.event.findUnique({
+    where: {
+      id: eventId
     }
   });
 
@@ -384,20 +385,20 @@ export const getSessionsForUser = async(eventId : number , userId  : number) : P
   const sessions = await prisma.attendanceSession.findMany({
     where: { eventId },
     orderBy: { startTime: 'asc' },
-    include : {
-      attendances : {
-        where : {
-          userId 
+    include: {
+      attendances: {
+        where: {
+          userId
         }
       }
     }
   });
-  
-  sessions.forEach((session , id) => {
-    console.log("session : " );
+
+  sessions.forEach((session, id) => {
+    console.log("session : ");
     console.log(session);
     console.log("attendances of the session : ");
-    session.attendances.forEach((attendances , id)=>{
+    session.attendances.forEach((attendances, id) => {
       console.log(attendances);
     });
   })
@@ -412,7 +413,7 @@ export const getSessionsForUser = async(eventId : number , userId  : number) : P
     sessionName: session.sessionName,
     location: session.location,
     credits: session.credits,
-    attended : session.attendances.length !== 0
+    attended: session.attendances.length !== 0
   }));
 
 
@@ -494,7 +495,7 @@ export const getSessionsByEventIdService = async (eventId: number) => {
       attendances: true
     }
   });
-  
+
   // Map sessions to include 'present' field and remove 'attendances'
   const mappedSessions = sessions.map(({ attendances, ...session }) => ({
     ...session,
@@ -505,5 +506,94 @@ export const getSessionsByEventIdService = async (eventId: number) => {
     success: true,
     message: 'Attendance sessions fetched successfully',
     data: mappedSessions,
+  };
+};
+
+export const exportSessionsToExcel = async (eventId: number) => {
+  if (isNaN(eventId)) {
+    throw new Error('Invalid event ID');
+  }
+
+  const event = await prisma.event.findUnique({
+    where: { id: eventId },
+  });
+
+  if (!event) {
+    throw new Error(`Event with ID ${eventId} does not exist.`);
+  }
+
+  const sessions = await prisma.attendanceSession.findMany({
+    where: { eventId },
+    orderBy: { startTime: 'asc' },
+    include: {
+      attendances: {
+        include: {
+          user: {
+            select: {
+              name: true,
+              email: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  const workbook = new exceljs.Workbook();
+  workbook.creator = 'PASC CCA System';
+  workbook.created = new Date();
+
+  // Track sheet names to avoid duplicates
+  const usedSheetNames = new Set<string>();
+
+  sessions.forEach((session) => {
+    // Worksheet names cannot exceed 31 characters, cannot start/end with ', and cannot contain : \ / ? * [ ]
+    let safeSheetName = (session.sessionName || `Session ${session.id}`)
+      .replace(/[\\/?*[\]:]/g, '_')
+      .trim();
+
+    // Ensure <= 31 chars
+    if (safeSheetName.length > 31) {
+      safeSheetName = safeSheetName.substring(0, 31).trim();
+    }
+
+    // Handle duplicates
+    let finalSheetName = safeSheetName;
+    let counter = 1;
+    while (usedSheetNames.has(finalSheetName.toLowerCase())) {
+      const suffix = ` (${counter})`;
+      const maxLength = 31 - suffix.length;
+      finalSheetName = `${safeSheetName.substring(0, maxLength)}${suffix}`;
+      counter++;
+    }
+    usedSheetNames.add(finalSheetName.toLowerCase());
+
+    const worksheet = workbook.addWorksheet(finalSheetName);
+
+    worksheet.columns = [
+      { header: 'Name', key: 'name', width: 30 },
+      { header: 'Email', key: 'email', width: 40 },
+      { header: 'Check-in Status', key: 'status', width: 20 },
+      { header: 'Check-in Time', key: 'time', width: 25 },
+    ];
+
+    // Style the header row
+    worksheet.getRow(1).font = { bold: true };
+
+    session.attendances.forEach((attendance) => {
+      worksheet.addRow({
+        name: attendance.user.name || 'N/A',
+        email: attendance.user.email,
+        status: 'Checked In',
+        time: attendance.attendedAt.toLocaleString(),
+      });
+    });
+  });
+
+  const buffer = await workbook.xlsx.writeBuffer();
+
+  return {
+    buffer,
+    filename: `${event.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}_${new Date().toISOString().split('T')[0]}.xlsx`,
   };
 };
