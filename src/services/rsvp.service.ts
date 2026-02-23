@@ -104,7 +104,7 @@ export const postrsvp = async (rsvpData: RsvpCreate, userId: number): Promise<Rs
 
     return {
       success: true,
-      message: waitlisted 
+      message: waitlisted
         ? `Added to waitlist (Position: ${waitlistPosition})`
         : 'RSVP created successfully',
       data: result
@@ -218,10 +218,10 @@ export const getRsvpsByEventId = async (eventId: number): Promise<ApiResponse<Rs
 };
 
 
-export const deleteRsvpById = async (userId : number ,rsvpId: number): Promise<RsvpResponse> => {
+export const deleteRsvpById = async (userId: number, rsvpId: number): Promise<RsvpResponse> => {
   try {
-    const existingRsvp = await prisma.rsvp.findUnique({
-      where: { id: rsvpId , userId : userId  },
+    const existingRsvp = await prisma.rsvp.findFirst({
+      where: { id: rsvpId, userId: userId },
       include: { event: true }
     });
     if (!existingRsvp) {
