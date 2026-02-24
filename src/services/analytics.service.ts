@@ -117,9 +117,9 @@ export const getAdminAnalytics = async () => {
     let totalRSVPCount = 0;
     let totalAttendanceCount = 0;
 
-    eventsWithStats.forEach(event => {
+    eventsWithStats.forEach((event: typeof eventsWithStats[number]) => {
       totalRSVPCount += event.rsvps.length;
-      event.sessions.forEach(session => {
+      event.sessions.forEach((session: typeof eventsWithStats[number]['sessions'][number]) => {
         totalAttendanceCount += session.attendances.length;
       });
     });
