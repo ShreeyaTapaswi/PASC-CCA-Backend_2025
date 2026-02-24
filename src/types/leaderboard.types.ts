@@ -22,6 +22,8 @@ export interface LeaderboardQuery {
   year?: number;
   month?: number;
   department?: string;
+  /** Division 1–13, derived from roll number (2nd and 3rd digits). */
+  division?: number;
   limit?: number;
 }
 

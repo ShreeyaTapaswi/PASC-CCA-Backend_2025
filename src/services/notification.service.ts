@@ -1,6 +1,9 @@
 import { prisma } from '../lib/prisma';
 import { NotificationType } from '@prisma/client';
 
+/** Notifications older than this (days) are deleted to prevent table overflow. */
+export const NOTIFICATION_EXPIRY_DAYS = 2;
+
 export interface CreateNotificationInput {
   userId: number;
   type: NotificationType;
@@ -97,15 +100,14 @@ export const getUnreadNotificationCount = async (userId: number): Promise<number
   });
 };
 
-// Delete old notifications (cleanup job)
-export const deleteOldNotifications = async (daysOld: number = 90) => {
+// Delete old notifications (cleanup job) – prevents table overflow
+export const deleteOldNotifications = async (daysOld: number = NOTIFICATION_EXPIRY_DAYS) => {
   const cutoffDate = new Date();
   cutoffDate.setDate(cutoffDate.getDate() - daysOld);
 
   return await prisma.notification.deleteMany({
     where: {
       sentAt: { lt: cutoffDate },
-      read: true,
     },
   });
 };
