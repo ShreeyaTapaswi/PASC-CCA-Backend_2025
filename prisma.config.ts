@@ -14,6 +14,6 @@ dotenv.config();
 
 export default defineConfig({
   datasource: {
-    url: process.env.DATABASE_URL,
+    url: "postgresql://neondb_owner:npg_exLqB8RkUa4H@ep-dry-cell-a1bhu2td-pooler.ap-southeast-1.aws.neon.tech/neondb?sslmode=require"
   },
 });

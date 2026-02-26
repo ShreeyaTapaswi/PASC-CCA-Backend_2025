@@ -1,10 +1,10 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 const PORT = process.env.PORT || 4000;
 const options: swaggerJsdoc.Options = {
-  definition: {
-    openapi: '3.0.0',
-    info: {
-      title: 'PASC CCA 2025 API Documentation',
+    swaggerDefinition: {    // <--- CHANGE IT TO THIS
+      openapi: '3.0.0',
+      info: {
+        title: 'PASC CCA 2025 API Documentation',
       version: '1.0.0',
       description: 'API documentation for PASC CCA 2025 Backend',
     },
