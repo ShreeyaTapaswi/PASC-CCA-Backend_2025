@@ -208,7 +208,9 @@ const options: swaggerJsdoc.Options = {
       },
     },
   },
-  apis: ['./src/controllers/*.ts'], // adjust this to match your controllers location
+  apis: ['./src/**/*.ts'],
 };
 
 export const swaggerSpec = swaggerJsdoc(options);
+
+delete (swaggerSpec as any).swagger;

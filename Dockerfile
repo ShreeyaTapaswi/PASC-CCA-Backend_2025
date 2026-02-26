@@ -113,7 +113,7 @@ COPY --chown=nodejs:nodejs prisma.config.ts ./
 # THE CHEAT CODE: Copy the completely built node_modules and compiled code
 COPY --from=builder --chown=nodejs:nodejs /app/node_modules ./node_modules
 COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-
+COPY --from=builder --chown=nodejs:nodejs /app/src ./src
 # Switch to non-root user
 USER nodejs
 
