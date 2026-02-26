@@ -585,7 +585,7 @@ export const exportSessionsToExcel = async (eventId: number) => {
         name: attendance.user.name || 'N/A',
         email: attendance.user.email,
         status: 'Checked In',
-        time: attendance.attendedAt.toLocaleString(),
+        time: attendance.attendedAt.toISOString().replace('T', ' ').substring(0, 19) + ' UTC',
       });
     });
   });

@@ -2,6 +2,9 @@
   "name": "pasc_cca_2025",
   "version": "1.0.0",
   "description": "Node.js backend with TypeScript and Prisma",
+  "engines": {
+    "node": ">=20.0.0"
+  },
   "main": "dist/index.js",
   "scripts": {
     "start": "npx prisma generate && node dist/index.js",
