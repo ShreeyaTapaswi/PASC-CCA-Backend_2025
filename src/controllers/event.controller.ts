@@ -1,5 +1,5 @@
 import { EventInput, EventResponse } from "src/types/event.types";
-import { deleteEventById, fetchAllEvents, getEventByIdPublic, getEventsAdmin, postEvent, updateEventService , fetchEventByStatus, getEventsForUser } from "../services/event.service";
+import { deleteEventById, fetchAllEvents, getEventByIdPublic, getEventsAdmin, postEvent, updateEventService, fetchEventByStatus, getEventsForUser } from "../services/event.service";
 
 import { Request, Response } from "express";
 
@@ -70,7 +70,7 @@ import { Request, Response } from "express";
  */
 export const createEvent = async (req: Request, res: Response): Promise<void> => {
   try {
-    
+
     const eventData = req.body;
     console.log(eventData);
     const result = await postEvent(eventData);
@@ -122,10 +122,47 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
+/**
+ * @swagger
+ * /api/events/admin:
+ *   get:
+ *     summary: Get all events for admin with optional search and pagination
+ *     tags: [Events]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: search
+ *         schema:
+ *           type: string
+ *         description: Search keyword for event title or description
+ *       - in: query
+ *         name: page
+ *         schema:
+ *           type: integer
+ *           default: 1
+ *         description: Page number for pagination
+ *       - in: query
+ *         name: limit
+ *         schema:
+ *           type: integer
+ *           default: 10
+ *         description: Number of events per page
+ *     responses:
+ *       200:
+ *         description: Successfully fetched events
+ *       500:
+ *         description: Internal Server Error
+ */
 export const getEventsForAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
-    // Assuming you have a service function to get events for admin
-    const result = await getEventsAdmin(); // Replace with actual service call
+    const { search, page, limit } = req.query;
+
+    const result = await getEventsAdmin(
+      parseInt(page as string) || 1,   // default: 1
+      parseInt(limit as string) || 10, // default: 10
+      search as string | undefined     // optional search keyword
+    );
 
     res.status(200).json(result);
   } catch (error) {
@@ -167,14 +204,13 @@ export const getEventsForAdmin = async (req: Request, res: Response): Promise<vo
  *             schema:
  *               $ref: '#/components/schemas/ErrorResponse'
  */
-export const getEventsOfUser = async (  req : Request , res : Response ) : Promise<void> => {
-  try{
+export const getEventsOfUser = async (req: Request, res: Response): Promise<void> => {
+  try {
     console.log("reached here");
     const userId = req.user?.id;
     const response = await getEventsForUser(userId as number);
     res.json(response).status(200);
-  }catch(error)
-  {
+  } catch (error) {
     console.error('Controller error:', error);
     res.status(500).json({
       success: false,
@@ -543,22 +579,22 @@ export const getEventById = async (req: Request, res: Response): Promise<void> =
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 
-export const getEventsByStatus = async (req: Request , res : Response) :Promise<void> => {
-  const {status} = req.query ;
+export const getEventsByStatus = async (req: Request, res: Response): Promise<void> => {
+  const { status } = req.query;
 
-  if(!['UPCOMING' , 'ONGOING' , 'COMPLETED'].includes(status as string)){
-    res.status(400).json({success : false , message : 'Invalid status query'}) ;
-    return ;
+  if (!['UPCOMING', 'ONGOING', 'COMPLETED'].includes(status as string)) {
+    res.status(400).json({ success: false, message: 'Invalid status query' });
+    return;
   }
 
   try {
-    const result = await fetchEventByStatus(status as 'UPCOMING' | 'ONGOING' | 'COMPLETED') ;
-    res.status(200).json(result) ;
-  }catch(error) {
+    const result = await fetchEventByStatus(status as 'UPCOMING' | 'ONGOING' | 'COMPLETED');
+    res.status(200).json(result);
+  } catch (error) {
     res.status(500).json({
-      success : false ,
-      message : 'Server error' ,
-      error : error instanceof Error ? error.message : 'Unexpected error'
+      success: false,
+      message: 'Server error',
+      error: error instanceof Error ? error.message : 'Unexpected error'
     });
   }
 };
