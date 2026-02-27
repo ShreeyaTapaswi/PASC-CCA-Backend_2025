@@ -1,7 +1,7 @@
 # Multi-stage build for optimized image size
 
 # Stage 1: Build
-FROM node:20-alpine AS builder
+FROM node:20 AS builder
 
 # Set working directory
 WORKDIR /app
@@ -23,14 +23,12 @@ RUN npx prisma generate
 RUN npm run build
 
 # Stage 2: Production
-FROM node:20-alpine AS production
+FROM node:20 AS production
 
 # Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
-
-# Create non-root user
-RUN addgroup -g 1001 -S nodejs && \
-    adduser -S nodejs -u 1001
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends dumb-init && \
+    rm -rf /var/lib/apt/lists/*
 
 # Set working directory
 WORKDIR /app
@@ -43,14 +41,11 @@ RUN npm install --only=production && \
     npm cache clean --force
 
 # Copy Prisma schema and migrations
-COPY --chown=nodejs:nodejs prisma ./prisma/
+COPY prisma ./prisma/
 
 # Copy built application from builder
-COPY --from=builder --chown=nodejs:nodejs /app/dist ./dist
-COPY --from=builder --chown=nodejs:nodejs /app/node_modules/.prisma ./node_modules/.prisma
-
-# Switch to non-root user
-USER nodejs
+COPY --from=builder /app/dist ./dist
+COPY --from=builder /app/node_modules/.prisma ./node_modules/.prisma
 
 # Expose port
 EXPOSE 3000

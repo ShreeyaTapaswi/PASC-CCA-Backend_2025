@@ -28,9 +28,6 @@ services:
       - "host.docker.internal:host-gateway"
     command: >
       sh -c "
-        echo '🔄 Synchronizing database schema...' &&
-        npx prisma db push &&
-        echo '✅ Schema synchronized!' &&
         echo '🚀 Starting application...' &&
         node dist/index.js
       "
