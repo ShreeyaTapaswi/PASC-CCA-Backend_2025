@@ -14,6 +14,23 @@ import {
 import { ApiResponse } from "src/types/event.types";
 import { prisma } from '../lib/prisma';
 
+// Admin: count new RSVPs in the last 24 hours (badge count)
+export const getAdminNewRsvpCount = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const since = new Date(Date.now() - 24 * 60 * 60 * 1000); // last 24 hours
+    const count = await prisma.rsvp.count({
+      where: {
+        createdAt: { gte: since },
+      },
+    });
+    res.status(200).json({ success: true, data: { count } });
+  } catch (error) {
+    console.error('Error getting new RSVP count:', error);
+    res.status(500).json({ success: false, message: 'Internal server error' });
+  }
+};
+
+
 
 /**
  * @swagger

@@ -44,26 +44,26 @@ export const getLeaderboard = async (
         weekAgo.setDate(weekAgo.getDate() - 7);
         dateFilter = { gte: weekAgo };
         break;
-      
+
       case LeaderboardPeriod.MONTHLY:
         const monthStart = new Date(year || currentDate.getFullYear(), (month || currentDate.getMonth()), 1);
         const monthEnd = new Date(year || currentDate.getFullYear(), (month || currentDate.getMonth()) + 1, 0);
         dateFilter = { gte: monthStart, lte: monthEnd };
         break;
-      
+
       case LeaderboardPeriod.SEMESTER:
         // Assuming semester is 6 months
         const semesterStart = new Date(year || currentDate.getFullYear(), 0, 1);
         const semesterEnd = new Date(year || currentDate.getFullYear(), 5, 30);
         dateFilter = { gte: semesterStart, lte: semesterEnd };
         break;
-      
+
       case LeaderboardPeriod.YEARLY:
         const yearStart = new Date(year || currentDate.getFullYear(), 0, 1);
         const yearEnd = new Date(year || currentDate.getFullYear(), 11, 31);
         dateFilter = { gte: yearStart, lte: yearEnd };
         break;
-      
+
       case LeaderboardPeriod.ALL_TIME:
         // No date filter
         break;
@@ -141,13 +141,13 @@ export const getUserRank = async (
   division?: number
 ): Promise<{ rank: number; totalUsers: number; credits: number }> => {
   const leaderboard = await getLeaderboard({ period, division, limit: 10000 });
-  
+
   if (!leaderboard.data) {
     return { rank: 0, totalUsers: 0, credits: 0 };
   }
 
   const userEntry = leaderboard.data.find(entry => entry.userId === userId);
-  
+
   return {
     rank: userEntry?.rank || 0,
     totalUsers: leaderboard.data.length,
@@ -238,4 +238,26 @@ export const getCachedLeaderboard = async (
   }
 };
 
+// Get the current user's year and division (based on roll number)
+export const getMyDivisionInfo = async (
+  userId: number
+): Promise<{ isFirstYear: boolean; division: number | null; year: number; roll: number | null }> => {
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { year: true, roll: true }
+  });
 
+  if (!user) {
+    throw new Error('User not found');
+  }
+
+  const isFirstYear = user.year === 1;
+  const division = isFirstYear && user.roll != null ? getDivisionFromRoll(user.roll) : null;
+
+  return {
+    isFirstYear,
+    division,
+    year: user.year,
+    roll: user.roll
+  };
+};

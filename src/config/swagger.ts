@@ -1,4 +1,5 @@
 import swaggerJsdoc from 'swagger-jsdoc';
+
 const PORT = process.env.PORT || 4000;
 const options: swaggerJsdoc.Options = {
     swaggerDefinition: {    // <--- CHANGE IT TO THIS
