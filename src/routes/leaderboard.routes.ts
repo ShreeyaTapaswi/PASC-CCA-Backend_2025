@@ -5,16 +5,15 @@ import {
   getUserRankController,
   getMyDivisionInfoController
 } from '../controllers/leaderboard.controller';
+import { apiLimiter } from '../middlewares/rateLimiter.middleware';
 
 const router = Router();
 
-// Public routes
-router.get('/', getLeaderboardController);
+// Public routes — apiLimiter to prevent scraping
+router.get('/', apiLimiter, getLeaderboardController);
 
 // User routes
-router.get('/my-rank', authenticateToken, requireUser, getUserRankController);
-router.get('/my-division', authenticateToken, requireUser, getMyDivisionInfoController);
+router.get('/my-rank', authenticateToken, requireUser, apiLimiter, getUserRankController);
+router.get('/my-division', authenticateToken, requireUser, apiLimiter, getMyDivisionInfoController);
 
 export default router;
-
-

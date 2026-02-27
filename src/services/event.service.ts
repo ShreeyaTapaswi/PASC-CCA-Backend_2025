@@ -1,13 +1,5 @@
-import { EventData, EventInput, EventResponse, PaginatedEventResponse, EventUserResponse, EventAndRsvp } from '../types/event.types';
+import { EventData, EventInput, EventResponse, PaginatedEventResponse, EventUserResponse } from '../types/event.types';
 import { prisma } from '../lib/prisma';
-
-// Compute real-time status from current date vs event dates
-function computeEventStatus(startDate: Date, endDate: Date): 'UPCOMING' | 'ONGOING' | 'COMPLETED' {
-    const now = new Date();
-    if (now < startDate) return 'UPCOMING';
-    if (now > endDate) return 'COMPLETED';
-    return 'ONGOING';
-}
 
 export const postEvent = async (eventData: EventInput): Promise<EventResponse> => {
     try {
@@ -72,8 +64,6 @@ export const getEventsForUser = async (userId: number): Promise<EventUserRespons
         const eventsWithRsvp = events.map(event => {
             // Convert event to EventData shape
             const { rsvps, ...eventData } = event;
-            const startDate = new Date(event.startDate);
-            const endDate = new Date(event.endDate);
             const eventDataObj = {
                 id: event.id,
                 title: event.title,
@@ -82,10 +72,9 @@ export const getEventsForUser = async (userId: number): Promise<EventUserRespons
                 credits: event.credits,
                 numDays: event.numDays,
                 capacity: event.capacity,
-                // Recompute status dynamically so events move correctly between Upcoming/Ongoing/Completed
-                status: computeEventStatus(startDate, endDate),
-                startDate,
-                endDate,
+                status: event.status,
+                startDate: new Date(event.startDate),
+                endDate: new Date(event.endDate),
                 createdAt: new Date(event.createdAt),
                 updatedAt: new Date(event.updatedAt)
             };
@@ -110,31 +99,69 @@ export const getEventsForUser = async (userId: number): Promise<EventUserRespons
     }
 };
 
-export const getEventsAdmin = async (): Promise<EventResponse> => {
+export const getEventsAdmin = async (
+    page = 1,
+    limit = 10,
+    search?: string
+): Promise<PaginatedEventResponse> => {
     try {
-        const events = await prisma.event.findMany({
-            orderBy: {
-                startDate: 'asc'
-            }
-        });
+        const skip = (page - 1) * limit;
+        const where: any = {};
 
-        // Recompute status dynamically so events move correctly between Upcoming/Ongoing/Completed
-        const eventsWithStatus = events.map(event => ({
-            ...event,
-            status: computeEventStatus(new Date(event.startDate), new Date(event.endDate))
+        // Filter by search keyword (title or description, case-insensitive)
+        if (search) {
+            where.OR = [
+                { title: { contains: search, mode: 'insensitive' } },
+                { description: { contains: search, mode: 'insensitive' } }
+            ];
+        }
+
+        const [eventsRaw, total] = await Promise.all([
+            prisma.event.findMany({
+                where,
+                skip,
+                take: limit,
+                orderBy: { startDate: 'asc' }
+            }),
+            prisma.event.count({ where })
+        ]);
+
+        const events: EventData[] = eventsRaw.map((event) => ({
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            location: event.location,
+            credits: event.credits,
+            numDays: event.numDays,
+            capacity: event.capacity,
+            status: event.status,
+            startDate: new Date(event.startDate),
+            endDate: new Date(event.endDate),
+            createdAt: new Date(event.createdAt),
+            updatedAt: new Date(event.updatedAt),
+            prerequisite: event.prerequisite
         }));
 
         return {
             success: true,
-            message: 'Events fetched successfully',
-            data: eventsWithStatus
-        }
+            data: {
+                events,
+                pagination: {
+                    total,
+                    page,
+                    limit,
+                    pages: Math.ceil(total / limit)
+                }
+            }
+        };
     } catch (error) {
         console.error('Service error:', error);
         return {
             success: false,
-            message: 'Failed to fetch events',
-            error: error instanceof Error ? error.message : 'Unknown error'
+            data: {
+                events: [],
+                pagination: { total: 0, page, limit, pages: 0 }
+            }
         };
     }
 }
@@ -179,45 +206,16 @@ export const updateEventService = async (eventId: number, eventData: EventInput)
 
 
 export const deleteEventById = async (id: number): Promise<EventResponse> => {
-    try {
-        const event = await prisma.event.findUnique({ where: { id } });
-        if (!event) {
-            throw new Error('Event not found');
-        }
-
-        // Manually delete all child records in a transaction to avoid FK constraint
-        // violations (in case DB-level cascades were not applied via migration).
-        await prisma.$transaction(async (tx) => {
-            // Delete attendance records through sessions
-            const sessions = await tx.attendanceSession.findMany({
-                where: { eventId: id },
-                select: { id: true }
-            });
-            const sessionIds = sessions.map(s => s.id);
-            if (sessionIds.length > 0) {
-                await tx.attendance.deleteMany({ where: { sessionId: { in: sessionIds } } });
-            }
-            await tx.attendanceSession.deleteMany({ where: { eventId: id } });
-
-            // Delete other child records
-            await tx.rsvp.deleteMany({ where: { eventId: id } });
-            await tx.eventReview.deleteMany({ where: { eventId: id } });
-            await tx.eventResource.deleteMany({ where: { eventId: id } });
-            await tx.eventGallery.deleteMany({ where: { eventId: id } });
-
-            // Finally delete the event itself
-            await tx.event.delete({ where: { id } });
-        });
-
-        return {
-            success: true,
-            message: 'Event deleted successfully',
-            data: event
-        };
-    } catch (error) {
-        console.error('Service error (deleteEventById):', error);
-        throw error;
+    const event = await prisma.event.findUnique({ where: { id } });
+    if (!event) {
+        throw new Error('Event not found');
     }
+    await prisma.event.delete({ where: { id } });
+    return {
+        success: true,
+        message: 'Event deleted successfully',
+        data: event
+    };
 };
 
 
@@ -260,26 +258,21 @@ export const fetchAllEvents = async (
         ]);
 
         // Map raw events to EventData format
-        const events: EventData[] = eventsRaw.map((event) => {
-            const startDate = new Date(event.startDate);
-            const endDate = new Date(event.endDate);
-            return {
-                id: event.id,
-                title: event.title,
-                description: event.description,
-                location: event.location,
-                credits: event.credits,
-                numDays: event.numDays,
-                capacity: event.capacity,
-                // Recompute status dynamically so events move correctly between Upcoming/Ongoing/Completed
-                status: computeEventStatus(startDate, endDate),
-                startDate,
-                endDate,
-                createdAt: new Date(event.createdAt),
-                updatedAt: new Date(event.updatedAt),
-                prerequisite: event.prerequisite
-            };
-        });
+        const events: EventData[] = eventsRaw.map((event) => ({
+            id: event.id,
+            title: event.title,
+            description: event.description,
+            location: event.location,
+            credits: event.credits,
+            numDays: event.numDays,
+            capacity: event.capacity,
+            status: event.status, // assuming this exists
+            startDate: new Date(event.startDate),
+            endDate: new Date(event.endDate),
+            createdAt: new Date(event.createdAt),
+            updatedAt: new Date(event.updatedAt),
+            prerequisite: event.prerequisite
+        }));
 
         return {
             success: true,

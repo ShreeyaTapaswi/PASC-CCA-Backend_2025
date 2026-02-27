@@ -8,8 +8,8 @@ const router = Router();
 
 // User and Admin routes with validation and rate limiting
 router.post('/', authenticateToken, requireUser, createLimiter, validate(rsvpCreateSchema), createRsvp);
-router.put('/:id', authenticateToken, requireUser, updateRsvp);
-router.delete('/:id', authenticateToken, requireUser, deleteRsvp);
+router.put('/:id', authenticateToken, requireUser, apiLimiter, updateRsvp);
+router.delete('/:id', authenticateToken, requireUser, apiLimiter, deleteRsvp);
 router.get('/user', authenticateToken, requireUser, apiLimiter, getRsvpUser);
 router.get('/events/:eventId/rsvp', authenticateToken, requireUser, apiLimiter, getRsvpByEventIdController);
 router.get('/event/:eventId', authenticateToken, requireAdmin, apiLimiter, getRsvpForEvent);
