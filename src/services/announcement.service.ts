@@ -134,8 +134,11 @@ export const getUserAnnouncements = async (
           },
           {
             OR: [
-              { expiresAt: null },
-              { expiresAt: { gte: currentDate } }
+              { expiresAt: { gte: currentDate } },
+              {
+                expiresAt: null,
+                createdAt: { gte: new Date(currentDate.getTime() - 2 * 24 * 60 * 60 * 1000) }
+              }
             ]
           }
         ]
@@ -338,8 +341,11 @@ export const getUnreadAnnouncementCount = async (userId: number): Promise<number
         },
         {
           OR: [
-            { expiresAt: null },
-            { expiresAt: { gte: currentDate } }
+            { expiresAt: { gte: currentDate } },
+            {
+              expiresAt: null,
+              createdAt: { gte: new Date(currentDate.getTime() - 2 * 24 * 60 * 60 * 1000) }
+            }
           ]
         }
       ],
