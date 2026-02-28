@@ -1,16 +1,16 @@
 import swaggerJsdoc from 'swagger-jsdoc';
 const PORT = process.env.PORT || 4000;
 const options: swaggerJsdoc.Options = {
-  swaggerDefinition: {    // <--- CHANGE IT TO THIS
-    openapi: '3.0.0',
-    info: {
-      title: 'PASC CCA 2025 API Documentation',
+    swaggerDefinition: {    // <--- CHANGE IT TO THIS
+      openapi: '3.0.0',
+      info: {
+        title: 'PASC CCA 2025 API Documentation',
       version: '1.0.0',
       description: 'API documentation for PASC CCA 2025 Backend',
     },
     servers: [
       {
-        url: `http://localhost:${PORT}/`,
+        url:`http://localhost:${PORT}/`,
         description: 'Development server',
       },
     ],
@@ -115,6 +115,102 @@ const options: swaggerJsdoc.Options = {
           type: 'object',
           properties: {
             success: { type: 'boolean' },
+            data: { $ref: '#/components/schemas/AttendanceSessionWithEvent' },
+          },
+        },
+        AttendanceUserEventSessionStatsResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
             data: {
-              $ref:
-                jwx - aaoq - wpb
+              type: 'array',
+              items: { $ref: '#/components/schemas/UserEventSessionStats' },
+            },
+          },
+        },
+        ErrorResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            error: { type: 'string' },
+            message: { type: 'string' },
+          },
+        },
+        Event: {
+          type: 'object',
+          properties: {
+            id: { type: 'integer' },
+            title: { type: 'string' },
+            description: { type: 'string' },
+            location: { type: 'string' },
+            credits: { type: 'number' },
+            numDays: { type: 'integer' },
+            capacity: { type: 'integer' },
+            status: {
+              type: 'string',
+              enum: ['UPCOMING', 'ONGOING', 'COMPLETED'],
+            },
+            startDate: { type: 'string', format: 'date-time' },
+            endDate: { type: 'string', format: 'date-time' },
+            createdAt: { type: 'string', format: 'date-time' },
+            updatedAt: { type: 'string', format: 'date-time' },
+            prerequisite: { type: 'string', nullable: true },
+          },
+        },
+        EventAndRsvp: {
+          type: 'object',
+          properties: {
+            event: { $ref: '#/components/schemas/Event' },
+            rsvp: { type: 'boolean', description: 'True if user has RSVP for this event' }
+          }
+        },
+        EventUserResponse: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'array',
+              items: { $ref: '#/components/schemas/EventAndRsvp' }
+            }
+          }
+        },
+        AttendanceSessionWithEventForUser: {
+          type: 'object',
+          properties: {
+            success: { type: 'boolean' },
+            message: { type: 'string' },
+            data: {
+              type: 'object',
+              properties: {
+                event: { $ref: '#/components/schemas/Event' },
+                session: {
+                  type: 'array',
+                  items: {
+                    type: 'object',
+                    properties: {
+                      id: { type: 'integer' },
+                      eventId: { type: 'integer' },
+                      startTime: { type: 'string', format: 'date-time' },
+                      endTime: { type: 'string', format: 'date-time', nullable: true },
+                      isActive: { type: 'boolean' },
+                      sessionName: { type: 'string' },
+                      location: { type: 'string' },
+                      credits: { type: 'integer' }
+                    }
+                  }
+                }
+              }
+            }
+          }
+        },
+      },
+    },
+  },
+  apis: ['./src/**/*.ts'],
+};
+
+export const swaggerSpec = swaggerJsdoc(options);
+
+delete (swaggerSpec as any).swagger;

@@ -63,16 +63,14 @@ import {
  */
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
   try {
-    console.log("heelo");
     const userData = req.body;
-    const result = await createUser(userData);
+    await createUser(userData);
     
     res.status(201).json({
       success: true,
-      data: result,
+      message: 'User registered successfully',
     });
   } catch (error) {
-    console.log("error");
     res.status(400).json({
       success: false,
       error: error instanceof Error ? error.message : 'Registration failed',
@@ -220,11 +218,11 @@ export const logoutUserController = async (req: Request, res: Response): Promise
 export const registerAdmin = async (req: Request, res: Response): Promise<void> => {
   try {
     const adminData = req.body;
-    const result = await createAdmin(adminData);
+    await createAdmin(adminData);
     
     res.status(201).json({
       success: true,
-      data: result,
+      message: 'Admin registered successfully',
     });
   } catch (error) {
     res.status(400).json({

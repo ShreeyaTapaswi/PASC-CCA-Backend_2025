@@ -59,7 +59,8 @@ const createTokenWithRetry = async (
 };
 
 // User Authentication Functions
-export const createUser = async (userData: IUserCreate): Promise<IAuthResponse> => {
+// Registration: create user, but do NOT issue a login token
+export const createUser = async (userData: IUserCreate): Promise<IUser> => {
   const hashedPassword = await hashPassword(userData.password);
   const user = await prisma.user.create({
     data: {
@@ -69,23 +70,15 @@ export const createUser = async (userData: IUserCreate): Promise<IAuthResponse> 
     },
   });
 
-  const payload: ITokenPayload = { id: user.id, email: user.email, type: 'user' };
-  const token = generateToken(payload);
-
-  await createTokenWithRetry(token, user.id, undefined, payload);
-
   return {
-    user: {
-      id: user.id,
-      name: user.name ?? "",
-      email: user.email,
-      department: user.department, // ✅ now typed as prisma.Department
-      year: user.year,
-      passoutYear: user.passoutYear,
-      roll: user.roll,
-      hours: user.hours,
-    },
-    token,
+    id: user.id,
+    name: user.name ?? "",
+    email: user.email,
+    department: user.department, // ✅ now typed as prisma.Department
+    year: user.year,
+    passoutYear: user.passoutYear,
+    roll: user.roll,
+    hours: user.hours,
   };
 };
 
@@ -125,7 +118,8 @@ export const loginUser = async (credentials: IUserLogin): Promise<IAuthResponse>
 };
 
 // Admin Authentication Functions
-export const createAdmin = async (adminData: IAdminCreate): Promise<IAuthResponse> => {
+// Registration: create admin, but do NOT issue a login token
+export const createAdmin = async (adminData: IAdminCreate): Promise<IAdmin> => {
   const hashedPassword = await hashPassword(adminData.password);
 
   const admin = await prisma.admin.create({
@@ -135,18 +129,10 @@ export const createAdmin = async (adminData: IAdminCreate): Promise<IAuthRespons
     },
   });
 
-  const payload: ITokenPayload = { id: admin.id, email: admin.email, type: 'admin' };
-  const token = generateToken(payload);
-
-  await createTokenWithRetry(token, undefined, admin.id, payload);
-
   return {
-    admin: {
-      id: admin.id,
-      name: admin.name !== null ? admin.name : "",
-      email: admin.email
-    },
-    token
+    id: admin.id,
+    name: admin.name !== null ? admin.name : "",
+    email: admin.email
   };
 };
 
