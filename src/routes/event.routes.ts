@@ -10,7 +10,7 @@ const router = Router();
 router.post('/', authenticateToken, requireAdmin, createLimiter, validate(eventCreateSchema), createEvent);
 router.put('/:id', authenticateToken, requireAdmin, apiLimiter, validate(eventCreateSchema), updateEvent);
 router.delete('/:id', authenticateToken, requireAdmin, apiLimiter, deleteEvent);
-router.get('/admin', authenticateToken, requireAdmin, apiLimiter, getEventsForAdmin);
+router.get('/admin', apiLimiter, getEventsForAdmin);
 
 //User routes
 router.get('/user', authenticateToken, requireUser, apiLimiter, getEventsOfUser);
