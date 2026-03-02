@@ -438,14 +438,23 @@ export const getSessionsForUser = async (eventId: number, userId: number): Promi
 
 
 export const getUserAttendanceStats = async (userId: number): Promise<UserAttendanceStats> => {
-  const sessions = await prisma.attendance.findMany({
-    where: {
-      userId: userId,
-    },
-    include: {
-      session: true, // includes AttendanceSession
-    },
+  // Fetch all events the user has actively RSVPd to
+  const userRsvps = await prisma.rsvp.findMany({
+    where: { userId, status: 'ATTENDING' },
+    select: { eventId: true },
   });
+  const rsvpEventIds = new Set(userRsvps.map((r) => r.eventId));
+
+  // Fetch all attendance records for this user, including session details
+  const allAttendances = await prisma.attendance.findMany({
+    where: { userId },
+    include: { session: true },
+  });
+
+  // Only count sessions that belong to an event the user RSVPd to
+  const qualifyingAttendances = allAttendances.filter((a) =>
+    rsvpEventIds.has(a.session.eventId)
+  );
 
   let totalCredits = 0;
   let bestSession: UserPersonalBest = {
@@ -454,29 +463,34 @@ export const getUserAttendanceStats = async (userId: number): Promise<UserAttend
     credits: 0,
   };
 
-  sessions.forEach((attendance) => {
+  qualifyingAttendances.forEach((attendance) => {
     const credits = attendance.session.credits;
-    console.log('reached here');
     totalCredits += credits;
 
-    if (attendance.session.credits > bestSession.credits) {
-      console.log('reached here');
+    if (credits > bestSession.credits) {
       bestSession = {
         sessionId: attendance.session.id,
         userId: attendance.userId,
-        credits: credits,
+        credits,
       };
     }
   });
 
-  const attendanceSessions = await prisma.attendanceSession.findMany({});
-  const completionRate = attendanceSessions.length > 0
-    ? (sessions.length / attendanceSessions.length) * 100
-    : 0;
+  // completionRate = sessions attended (qualifying) / total sessions of RSVPd events
+  let totalRsvpdSessions = 0;
+  if (rsvpEventIds.size > 0) {
+    totalRsvpdSessions = await prisma.attendanceSession.count({
+      where: { eventId: { in: [...rsvpEventIds] } },
+    });
+  }
+  const completionRate =
+    totalRsvpdSessions > 0
+      ? (qualifyingAttendances.length / totalRsvpdSessions) * 100
+      : 0;
 
   return {
-    sessionsAttended: sessions.length,
-    sessions: sessions.map((a) => { return a.session }),
+    sessionsAttended: qualifyingAttendances.length,
+    sessions: qualifyingAttendances.map((a) => a.session),
     totalCredits,
     completionRate,
     userPersonalBest: bestSession,
