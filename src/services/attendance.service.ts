@@ -16,9 +16,12 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
     throw new Error(`Event with ID ${eventId} does not exist.`);
   }
 
+  if (event.status === 'COMPLETED') {
+    throw new Error('Cannot create a session for a completed event.');
+  }
+
   const missingFields = [];
   if (!startTime) missingFields.push("startTime");
-
   if (!location) missingFields.push("location");
   if (!sessionName) missingFields.push("sessionName");
 
@@ -26,12 +29,35 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
     throw new Error(`Missing the required field(s): ${missingFields.join(", ")}`);
   }
 
+  // Validate session dates are within the event date range
+  const eventStart = new Date(event.startDate);
+  const eventEnd = new Date(event.endDate);
+  const sessionStart = new Date(startTime!);
+
+  if (sessionStart < eventStart || sessionStart > eventEnd) {
+    throw new Error(
+      `Session start time must be within the event date range (${eventStart.toISOString()} – ${eventEnd.toISOString()}).`
+    );
+  }
+
+  if (endTime) {
+    const sessionEnd = new Date(endTime);
+    if (sessionEnd < eventStart || sessionEnd > eventEnd) {
+      throw new Error(
+        `Session end time must be within the event date range (${eventStart.toISOString()} – ${eventEnd.toISOString()}).`
+      );
+    }
+    if (sessionEnd <= sessionStart) {
+      throw new Error('Session end time must be after the session start time.');
+    }
+  }
+
   const code = crypto.randomBytes(4).toString("hex");
 
   const session = await prisma.attendanceSession.create({
     data: {
       eventId,
-      startTime: startTime ? new Date(startTime) : undefined,
+      startTime: new Date(startTime!),
       endTime: endTime ? new Date(endTime) : undefined,
       isActive: typeof isActive === 'boolean' ? isActive : undefined,
       code,
@@ -55,7 +81,6 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
       isActive: session.isActive,
       credits: session.credits
     }
-
   };
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -68,10 +93,35 @@ export const updateSessionService = async (
 
   const session = await prisma.attendanceSession.findUnique({
     where: { id: sessionId },
+    include: { event: true },
   });
 
   if (!session) {
     throw new Error(`Attendance session with ID ${sessionId} does not exist.`);
+  }
+
+  // Validate updated dates against the parent event's date range
+  const eventStart = new Date(session.event.startDate);
+  const eventEnd = new Date(session.event.endDate);
+
+  const effectiveStart = startTime ? new Date(startTime) : session.startTime;
+  const effectiveEnd = endTime ? new Date(endTime) : session.endTime;
+
+  if (effectiveStart < eventStart || effectiveStart > eventEnd) {
+    throw new Error(
+      `Session start time must be within the event date range (${eventStart.toISOString()} – ${eventEnd.toISOString()}).`
+    );
+  }
+
+  if (effectiveEnd) {
+    if (effectiveEnd < eventStart || effectiveEnd > eventEnd) {
+      throw new Error(
+        `Session end time must be within the event date range (${eventStart.toISOString()} – ${eventEnd.toISOString()}).`
+      );
+    }
+    if (effectiveEnd <= effectiveStart) {
+      throw new Error('Session end time must be after the session start time.');
+    }
   }
 
   const updatedSession = await prisma.attendanceSession.update({
