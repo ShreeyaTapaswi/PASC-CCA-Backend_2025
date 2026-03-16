@@ -29,26 +29,24 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
     throw new Error(`Missing the required field(s): ${missingFields.join(", ")}`);
   }
 
-  // Validate session dates are within the event date range
-  const eventStart = new Date(event.startDate);
-  const eventEnd = new Date(event.endDate);
-  const sessionStart = new Date(startTime!);
+  // Validate session dates are within the event date range (compare date portions only)
+  const sessionStartDate = new Date(startTime as Date).toISOString().split('T')[0];
+  const eventStartDate = new Date(event.startDate).toISOString().split('T')[0];
+  const eventEndDate = new Date(event.endDate).toISOString().split('T')[0];
 
-  if (sessionStart < eventStart || sessionStart > eventEnd) {
-    throw new Error(
-      `Session start time must be within the event date range (${eventStart.toISOString()} – ${eventEnd.toISOString()}).`
-    );
+  if (sessionStartDate < eventStartDate) {
+    throw new Error(`Session start time cannot be before the event start date (${eventStartDate}).`);
   }
-
+  if (sessionStartDate > eventEndDate) {
+    throw new Error(`Session start time cannot be after the event end date (${eventEndDate}).`);
+  }
   if (endTime) {
-    const sessionEnd = new Date(endTime);
-    if (sessionEnd < eventStart || sessionEnd > eventEnd) {
-      throw new Error(
-        `Session end time must be within the event date range (${eventStart.toISOString()} – ${eventEnd.toISOString()}).`
-      );
+    const sessionEndDate = new Date(endTime).toISOString().split('T')[0];
+    if (sessionEndDate < eventStartDate) {
+      throw new Error(`Session end time cannot be before the event start date (${eventStartDate}).`);
     }
-    if (sessionEnd <= sessionStart) {
-      throw new Error('Session end time must be after the session start time.');
+    if (sessionEndDate > eventEndDate) {
+      throw new Error(`Session end time cannot be after the event end date (${eventEndDate}).`);
     }
   }
 
@@ -100,27 +98,34 @@ export const updateSessionService = async (
     throw new Error(`Attendance session with ID ${sessionId} does not exist.`);
   }
 
-  // Validate updated dates against the parent event's date range
-  const eventStart = new Date(session.event.startDate);
-  const eventEnd = new Date(session.event.endDate);
+  // Validate session dates are within the event date range
+  if (startTime || endTime) {
+    const event = await prisma.event.findUnique({
+      where: { id: session.eventId },
+    });
 
-  const effectiveStart = startTime ? new Date(startTime) : session.startTime;
-  const effectiveEnd = endTime ? new Date(endTime) : session.endTime;
+    if (event) {
+      const eventStartDate = new Date(event.startDate).toISOString().split('T')[0];
+      const eventEndDate = new Date(event.endDate).toISOString().split('T')[0];
 
-  if (effectiveStart < eventStart || effectiveStart > eventEnd) {
-    throw new Error(
-      `Session start time must be within the event date range (${eventStart.toISOString()} – ${eventEnd.toISOString()}).`
-    );
-  }
-
-  if (effectiveEnd) {
-    if (effectiveEnd < eventStart || effectiveEnd > eventEnd) {
-      throw new Error(
-        `Session end time must be within the event date range (${eventStart.toISOString()} – ${eventEnd.toISOString()}).`
-      );
-    }
-    if (effectiveEnd <= effectiveStart) {
-      throw new Error('Session end time must be after the session start time.');
+      if (startTime) {
+        const sessionStartDate = new Date(startTime).toISOString().split('T')[0];
+        if (sessionStartDate < eventStartDate) {
+          throw new Error(`Session start time cannot be before the event start date (${eventStartDate}).`);
+        }
+        if (sessionStartDate > eventEndDate) {
+          throw new Error(`Session start time cannot be after the event end date (${eventEndDate}).`);
+        }
+      }
+      if (endTime) {
+        const sessionEndDate = new Date(endTime).toISOString().split('T')[0];
+        if (sessionEndDate < eventStartDate) {
+          throw new Error(`Session end time cannot be before the event start date (${eventStartDate}).`);
+        }
+        if (sessionEndDate > eventEndDate) {
+          throw new Error(`Session end time cannot be after the event end date (${eventEndDate}).`);
+        }
+      }
     }
   }
 
