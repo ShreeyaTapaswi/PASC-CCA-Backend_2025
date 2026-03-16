@@ -26,6 +26,27 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
     throw new Error(`Missing the required field(s): ${missingFields.join(", ")}`);
   }
 
+  // Validate session dates are within the event date range (compare date portions only)
+  const sessionStartDate = new Date(startTime as Date).toISOString().split('T')[0];
+  const eventStartDate = new Date(event.startDate).toISOString().split('T')[0];
+  const eventEndDate = new Date(event.endDate).toISOString().split('T')[0];
+
+  if (sessionStartDate < eventStartDate) {
+    throw new Error(`Session start time cannot be before the event start date (${eventStartDate}).`);
+  }
+  if (sessionStartDate > eventEndDate) {
+    throw new Error(`Session start time cannot be after the event end date (${eventEndDate}).`);
+  }
+  if (endTime) {
+    const sessionEndDate = new Date(endTime).toISOString().split('T')[0];
+    if (sessionEndDate < eventStartDate) {
+      throw new Error(`Session end time cannot be before the event start date (${eventStartDate}).`);
+    }
+    if (sessionEndDate > eventEndDate) {
+      throw new Error(`Session end time cannot be after the event end date (${eventEndDate}).`);
+    }
+  }
+
   const code = crypto.randomBytes(4).toString("hex");
 
   const session = await prisma.attendanceSession.create({
@@ -72,6 +93,37 @@ export const updateSessionService = async (
 
   if (!session) {
     throw new Error(`Attendance session with ID ${sessionId} does not exist.`);
+  }
+
+  // Validate session dates are within the event date range
+  if (startTime || endTime) {
+    const event = await prisma.event.findUnique({
+      where: { id: session.eventId },
+    });
+
+    if (event) {
+      const eventStartDate = new Date(event.startDate).toISOString().split('T')[0];
+      const eventEndDate = new Date(event.endDate).toISOString().split('T')[0];
+
+      if (startTime) {
+        const sessionStartDate = new Date(startTime).toISOString().split('T')[0];
+        if (sessionStartDate < eventStartDate) {
+          throw new Error(`Session start time cannot be before the event start date (${eventStartDate}).`);
+        }
+        if (sessionStartDate > eventEndDate) {
+          throw new Error(`Session start time cannot be after the event end date (${eventEndDate}).`);
+        }
+      }
+      if (endTime) {
+        const sessionEndDate = new Date(endTime).toISOString().split('T')[0];
+        if (sessionEndDate < eventStartDate) {
+          throw new Error(`Session end time cannot be before the event start date (${eventStartDate}).`);
+        }
+        if (sessionEndDate > eventEndDate) {
+          throw new Error(`Session end time cannot be after the event end date (${eventEndDate}).`);
+        }
+      }
+    }
   }
 
   const updatedSession = await prisma.attendanceSession.update({
