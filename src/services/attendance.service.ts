@@ -16,9 +16,12 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
     throw new Error(`Event with ID ${eventId} does not exist.`);
   }
 
+  if (event.status === 'COMPLETED') {
+    throw new Error('Cannot create a session for a completed event.');
+  }
+
   const missingFields = [];
   if (!startTime) missingFields.push("startTime");
-
   if (!location) missingFields.push("location");
   if (!sessionName) missingFields.push("sessionName");
 
@@ -52,7 +55,7 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
   const session = await prisma.attendanceSession.create({
     data: {
       eventId,
-      startTime: startTime ? new Date(startTime) : undefined,
+      startTime: new Date(startTime!),
       endTime: endTime ? new Date(endTime) : undefined,
       isActive: typeof isActive === 'boolean' ? isActive : undefined,
       code,
@@ -76,7 +79,6 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
       isActive: session.isActive,
       credits: session.credits
     }
-
   };
 };
 ////////////////////////////////////////////////////////////////////////////////////////////////
@@ -89,6 +91,7 @@ export const updateSessionService = async (
 
   const session = await prisma.attendanceSession.findUnique({
     where: { id: sessionId },
+    include: { event: true },
   });
 
   if (!session) {

@@ -19,6 +19,7 @@ import notificationRoutes from './routes/notification.routes';
 import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
 import { deleteOldNotifications, NOTIFICATION_EXPIRY_DAYS } from './services/notification.service';
+import { refreshEventStatuses } from './services/event.service';
 import {
   registerUser,
   loginUserController,
@@ -41,7 +42,7 @@ const app = express();
 app.set('trust proxy', 1);
 
 app.use(cors({
-  origin: process.env.FRONTEND_URL || 'http://localhost:3000',
+  origin: "*",
   credentials: true,
 }));
 
@@ -117,8 +118,27 @@ async function runNotificationCleanup() {
 /** Interval for notification cleanup (every 6 hours). */
 const NOTIFICATION_CLEANUP_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
+/** Refreshes event statuses (UPCOMING/ONGOING/COMPLETED) based on current time. */
+async function runEventStatusRefresh() {
+  try {
+    const { updated } = await refreshEventStatuses();
+    if (updated > 0) {
+      console.log(`[EventStatus] Updated ${updated} event(s) to correct status.`);
+    }
+  } catch (err) {
+    console.error('[EventStatus] Status refresh failed:', err);
+  }
+}
+
+/** Interval for event status refresh (every 5 minutes). */
+const EVENT_STATUS_REFRESH_INTERVAL_MS = 5 * 60 * 1000;
+
 async function startServer() {
   await connectDB();
+
+  // Run status refresh on startup to immediately fix any stale events
+  await runEventStatusRefresh();
+  setInterval(runEventStatusRefresh, EVENT_STATUS_REFRESH_INTERVAL_MS);
 
   await runNotificationCleanup();
   setInterval(runNotificationCleanup, NOTIFICATION_CLEANUP_INTERVAL_MS);

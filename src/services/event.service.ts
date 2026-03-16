@@ -105,6 +105,10 @@ export const getEventsAdmin = async (
     search?: string
 ): Promise<PaginatedEventResponse> => {
     try {
+        // Always refresh event statuses before returning results so the admin
+        // sees accurate UPCOMING / ONGOING / COMPLETED labels.
+        await refreshEventStatuses();
+
         const skip = (page - 1) * limit;
         const where: any = {};
 
@@ -206,16 +210,58 @@ export const updateEventService = async (eventId: number, eventData: EventInput)
 
 
 export const deleteEventById = async (id: number): Promise<EventResponse> => {
-    const event = await prisma.event.findUnique({ where: { id } });
-    if (!event) {
-        throw new Error('Event not found');
+    try {
+        const event = await prisma.event.findUnique({ where: { id } });
+        if (!event) {
+            throw new Error('Event not found');
+        }
+
+        // Use a transaction to explicitly delete all related records first,
+        // then delete the event. This ensures deletion works even if DB-level
+        // CASCADE constraints are not applied.
+        await prisma.$transaction(async (tx) => {
+            // Get all session IDs for this event
+            const sessions = await tx.attendanceSession.findMany({
+                where: { eventId: id },
+                select: { id: true }
+            });
+            const sessionIds = sessions.map((s) => s.id);
+
+            // Delete attendances linked to those sessions
+            if (sessionIds.length > 0) {
+                await tx.attendance.deleteMany({
+                    where: { sessionId: { in: sessionIds } }
+                });
+            }
+
+            // Delete attendance sessions
+            await tx.attendanceSession.deleteMany({ where: { eventId: id } });
+
+            // Delete RSVPs
+            await tx.rsvp.deleteMany({ where: { eventId: id } });
+
+            // Delete reviews
+            await tx.eventReview.deleteMany({ where: { eventId: id } });
+
+            // Delete resources
+            await tx.eventResource.deleteMany({ where: { eventId: id } });
+
+            // Delete gallery
+            await tx.eventGallery.deleteMany({ where: { eventId: id } });
+
+            // Finally delete the event
+            await tx.event.delete({ where: { id } });
+        });
+
+        return {
+            success: true,
+            message: 'Event deleted successfully',
+            data: event
+        };
+    } catch (error) {
+        console.error('Service error (deleteEventById):', error);
+        throw error;
     }
-    await prisma.event.delete({ where: { id } });
-    return {
-        success: true,
-        message: 'Event deleted successfully',
-        data: event
-    };
 };
 
 
@@ -338,4 +384,36 @@ export const fetchEventByStatus = async (status: 'UPCOMING' | 'ONGOING' | 'COMPL
             error: error instanceof Error ? error.message : 'Unknown error'
         };
     }
+};
+
+/**
+ * Refreshes the status of all events based on the current time.
+ * - UPCOMING  → ONGOING  : if startDate <= now <= endDate
+ * - UPCOMING/ONGOING → COMPLETED : if endDate < now
+ * Runs on server startup and on a scheduled interval.
+ */
+export const refreshEventStatuses = async (): Promise<{ updated: number }> => {
+    const now = new Date();
+
+    // Mark events as ONGOING (startDate has passed but endDate hasn't yet)
+    const ongoingResult = await prisma.event.updateMany({
+        where: {
+            status: { not: 'ONGOING' },
+            startDate: { lte: now },
+            endDate: { gte: now },
+        },
+        data: { status: 'ONGOING' },
+    });
+
+    // Mark events as COMPLETED (endDate has passed)
+    const completedResult = await prisma.event.updateMany({
+        where: {
+            status: { not: 'COMPLETED' },
+            endDate: { lt: now },
+        },
+        data: { status: 'COMPLETED' },
+    });
+
+    const updated = ongoingResult.count + completedResult.count;
+    return { updated };
 };
