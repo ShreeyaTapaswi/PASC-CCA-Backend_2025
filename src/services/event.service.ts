@@ -219,7 +219,7 @@ export const deleteEventById = async (id: number): Promise<EventResponse> => {
         // Use a transaction to explicitly delete all related records first,
         // then delete the event. This ensures deletion works even if DB-level
         // CASCADE constraints are not applied.
-        await prisma.$transaction(async (tx) => {
+        await prisma.$transaction(async (tx: any) => {
             // Get all session IDs for this event
             const sessions = await tx.attendanceSession.findMany({
                 where: { eventId: id },

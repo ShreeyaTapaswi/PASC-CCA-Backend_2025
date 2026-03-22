@@ -20,7 +20,7 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
     throw new Error('Cannot create a session for a completed event.');
   }
 
-  const missingFields = [];
+  const missingFields: string[] = [];
   if (!startTime) missingFields.push("startTime");
   if (!location) missingFields.push("location");
   if (!sessionName) missingFields.push("sessionName");
@@ -297,7 +297,7 @@ export const markSession = async (
   }
 
   // Use transaction to ensure atomicity
-  const result = await prisma.$transaction(async (tx) => {
+  const result = await prisma.$transaction(async (tx: any) => {
     // Create attendance record
     const attendance = await tx.attendance.create({
       data: {

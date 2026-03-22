@@ -49,7 +49,7 @@ export const postrsvp = async (rsvpData: RsvpCreate, userId: number): Promise<Rs
     const isAtCapacity = confirmedRsvpCount >= event.capacity;
 
     let waitlisted = false;
-    let waitlistPosition = null;
+    let waitlistPosition: number | null = null;
 
     if (isAtCapacity && rsvpData.status === 'ATTENDING') {
       // Add to waitlist
