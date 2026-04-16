@@ -555,4 +555,4 @@ export const UpdateRsvp = async (userId: number, eventId: number, status: RsvpSt
       data: undefined
     };
   }
-};
+};
