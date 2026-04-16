@@ -100,7 +100,8 @@ export const createEventReview = async (
 // Get event reviews
 export const getEventReviews = async (
   eventId: number,
-  limit: number = 50
+  limit: number = 50,
+  isAdmin: boolean = false
 ): Promise<EventReviewResponse> => {
   try {
     const reviews = await prisma.eventReview.findMany({
@@ -119,10 +120,10 @@ export const getEventReviews = async (
       take: limit
     });
 
-    // Hide user info for anonymous reviews
+    // Hide user info for anonymous reviews unless admin
     const processedReviews = reviews.map(review => ({
       ...review,
-      user: review.anonymous ? null : review.user
+      user: review.anonymous && !isAdmin ? null : review.user
     }));
 
     return {

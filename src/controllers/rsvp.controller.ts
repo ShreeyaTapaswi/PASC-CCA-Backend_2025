@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { PrismaClient, Rsvp } from "@prisma/client";
 
 import { Request, Response } from "express";
@@ -10,6 +11,8 @@ import {
   getRsvpByEventId as getRsvpByEventIdService,
   deleteRsvpById,
   UpdateRsvp,
+  adminApproveRsvp,
+  adminRejectRsvp,
 } from "../services/rsvp.service";
 import { ApiResponse } from "src/types/event.types";
 import { prisma } from '../lib/prisma';
@@ -56,7 +59,7 @@ export const getAdminNewRsvpCount = async (req: Request, res: Response): Promise
  *                 example: 101
  *               status:
  *                 type: string
- *                 enum: [ "ATTENDING", "NOT_ATTENDING"]
+ *                 enum: [ "CONFIRMED", "WAITLISTED", "REJECTED", "ATTENDING", "NOT_ATTENDING"]
  *                 example: ATTENDING
  *
  *     responses:
@@ -104,7 +107,7 @@ export const createRsvp = async (req: Request, res: Response) => {
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error instanceof Error ? error.message : "Unexpected error",
+      error: handleError(error, "Unexpected error"),
     });
   }
 };
@@ -143,7 +146,7 @@ export const createRsvp = async (req: Request, res: Response) => {
  *                         example: "clevent456"
  *                       status:
  *                         type: string
- *                         enum: ["ATTENDING", "NOT_ATTENDING"]
+ *                         enum: ["CONFIRMED", "WAITLISTED", "REJECTED", "ATTENDING", "NOT_ATTENDING"]
  *                         example: "ATTENDING"
  *                       createdAt:
  *                         type: string
@@ -213,7 +216,7 @@ export const getRsvpUser = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error instanceof Error ? error.message : "Unexpected error",
+      error: handleError(error, "Unexpected error"),
     });
   }
 };
@@ -302,7 +305,7 @@ export const getRsvpForEvent = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error instanceof Error ? error.message : "Unexpected error",
+      error: handleError(error, "Unexpected error"),
     });
   }
 };
@@ -431,7 +434,7 @@ export const getRsvpByEventIdController = async (
     res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error instanceof Error ? error.message : "Unexpected error",
+      error: handleError(error, "Unexpected error"),
     });
     return;
   }
@@ -464,7 +467,7 @@ export const getRsvpByEventIdController = async (
  *             properties:
  *               status:
  *                 type: string
- *                 enum: [ATTENDING, NOT_ATTENDING]
+ *                 enum: [CONFIRMED, WAITLISTED, REJECTED, ATTENDING, NOT_ATTENDING]
  *     responses:
  *       200:
  *         description: RSVP updated successfully
@@ -526,7 +529,7 @@ export const updateRsvp = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error instanceof Error ? error.message : "Unexpected error",
+      error: handleError(error, "Unexpected error"),
     });
   }
 };
@@ -641,7 +644,57 @@ export const deleteRsvp = async (req: Request, res: Response) => {
     return res.status(500).json({
       success: false,
       message: "Internal server error",
-      error: error instanceof Error ? error.message : "Unexpected error",
+      error: handleError(error, "Unexpected error"),
+    });
+  }
+};
+
+export const approveRsvp = async (req: Request, res: Response) => {
+  try {
+    const rsvpId = parseInt(req.params.id);
+    const overrideCapacity = req.query.overrideCapacity === 'true' || req.body.overrideCapacity === true;
+    
+    if (isNaN(rsvpId)) {
+      return res.status(400).json({ success: false, message: "Invalid RSVP ID" });
+    }
+
+    const result = await adminApproveRsvp(rsvpId, overrideCapacity);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Controller error in approveRsvp:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: handleError(error, "Unexpected error"),
+    });
+  }
+};
+
+export const rejectRsvp = async (req: Request, res: Response) => {
+  try {
+    const rsvpId = parseInt(req.params.id);
+    if (isNaN(rsvpId)) {
+      return res.status(400).json({ success: false, message: "Invalid RSVP ID" });
+    }
+
+    const result = await adminRejectRsvp(rsvpId);
+
+    if (!result.success) {
+      return res.status(400).json(result);
+    }
+
+    return res.status(200).json(result);
+  } catch (error) {
+    console.error("Controller error in rejectRsvp:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Internal server error",
+      error: handleError(error, "Unexpected error"),
     });
   }
 };

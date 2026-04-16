@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { Request, Response } from 'express';
 import {
   generateEventICS,
@@ -28,7 +29,7 @@ export const downloadEventCalendar = async (req: Request, res: Response): Promis
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to generate calendar'
+      message: handleError(error, 'Failed to generate calendar')
     });
   }
 };
@@ -48,7 +49,7 @@ export const downloadUserCalendar = async (req: Request, res: Response): Promise
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to generate calendar'
+      message: handleError(error, 'Failed to generate calendar')
     });
   }
 };
@@ -62,7 +63,7 @@ export const downloadPublicCalendar = async (req: Request, res: Response): Promi
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to generate calendar'
+      message: handleError(error, 'Failed to generate calendar')
     });
   }
 };
@@ -80,7 +81,7 @@ export const getCalendarLinks = async (req: Request, res: Response): Promise<voi
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get calendar links'
+      message: handleError(error, 'Failed to get calendar links')
     });
   }
 };

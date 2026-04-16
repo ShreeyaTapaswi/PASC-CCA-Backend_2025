@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { Request, Response } from 'express';
 import {
   createEventResource,
@@ -13,7 +14,7 @@ export const createResource = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to create resource'
+      message: handleError(error, 'Failed to create resource')
     });
   }
 };
@@ -31,7 +32,7 @@ export const getResources = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get resources'
+      message: handleError(error, 'Failed to get resources')
     });
   }
 };
@@ -49,7 +50,7 @@ export const updateResource = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to update resource'
+      message: handleError(error, 'Failed to update resource')
     });
   }
 };
@@ -67,7 +68,7 @@ export const deleteResource = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to delete resource'
+      message: handleError(error, 'Failed to delete resource')
     });
   }
 };

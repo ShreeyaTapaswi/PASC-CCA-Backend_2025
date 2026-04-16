@@ -61,6 +61,17 @@ const createTokenWithRetry = async (
 // User Authentication Functions
 // Registration: create user, but do NOT issue a login token
 export const createUser = async (userData: IUserCreate): Promise<IUser> => {
+  const existingUser = await prisma.user.findUnique({ where: { email: userData.email } });
+  const existingAdmin = await prisma.admin.findUnique({ where: { email: userData.email } });
+  if (existingUser || existingAdmin) {
+    throw new Error('An account with this email already exists.');
+  }
+
+  const existingRollUser = await prisma.user.findFirst({ where: { roll: userData.roll } });
+  if (existingRollUser) {
+    throw new Error('An account with this roll number already exists.');
+  }
+
   const hashedPassword = await hashPassword(userData.password);
   const user = await prisma.user.create({
     data: {
@@ -120,6 +131,12 @@ export const loginUser = async (credentials: IUserLogin): Promise<IAuthResponse>
 // Admin Authentication Functions
 // Registration: create admin, but do NOT issue a login token
 export const createAdmin = async (adminData: IAdminCreate): Promise<IAdmin> => {
+  const existingUser = await prisma.user.findUnique({ where: { email: adminData.email } });
+  const existingAdmin = await prisma.admin.findUnique({ where: { email: adminData.email } });
+  if (existingUser || existingAdmin) {
+    throw new Error('An account with this email already exists.');
+  }
+
   const hashedPassword = await hashPassword(adminData.password);
 
   const admin = await prisma.admin.create({

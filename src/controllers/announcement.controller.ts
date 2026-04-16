@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { Request, Response } from 'express';
 import {
   createAnnouncement,
@@ -22,7 +23,7 @@ export const createAnnouncementController = async (req: Request, res: Response):
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to create announcement'
+      message: handleError(error, 'Failed to create announcement')
     });
   }
 };
@@ -43,7 +44,7 @@ export const getUserAnnouncementsController = async (req: Request, res: Response
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get announcements'
+      message: handleError(error, 'Failed to get announcements')
     });
   }
 };
@@ -56,7 +57,7 @@ export const getAllAnnouncementsController = async (req: Request, res: Response)
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get announcements'
+      message: handleError(error, 'Failed to get announcements')
     });
   }
 };
@@ -80,7 +81,7 @@ export const markAnnouncementReadController = async (req: Request, res: Response
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to mark announcement as read'
+      message: handleError(error, 'Failed to mark announcement as read')
     });
   }
 };
@@ -98,7 +99,7 @@ export const updateAnnouncementController = async (req: Request, res: Response):
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to update announcement'
+      message: handleError(error, 'Failed to update announcement')
     });
   }
 };
@@ -116,7 +117,7 @@ export const deleteAnnouncementController = async (req: Request, res: Response):
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to delete announcement'
+      message: handleError(error, 'Failed to delete announcement')
     });
   }
 };
@@ -134,7 +135,7 @@ export const getUnreadCountController = async (req: Request, res: Response): Pro
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get unread count'
+      message: handleError(error, 'Failed to get unread count')
     });
   }
 };

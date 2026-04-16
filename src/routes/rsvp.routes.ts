@@ -1,6 +1,6 @@
 import { Router } from 'express';
 import { authenticateToken, requireUser, requireAdmin } from '../middlewares/auth.middleware';
-import { createRsvp, deleteRsvp, getAdminNewRsvpCount, getRsvpByEventIdController, getRsvpForEvent, getRsvpUser, updateRsvp } from '../controllers/rsvp.controller';
+import { approveRsvp, createRsvp, deleteRsvp, getAdminNewRsvpCount, getRsvpByEventIdController, getRsvpForEvent, getRsvpUser, rejectRsvp, updateRsvp } from '../controllers/rsvp.controller';
 import { validate, rsvpCreateSchema } from '../middlewares/validation.middleware';
 import { createLimiter, apiLimiter } from '../middlewares/rateLimiter.middleware';
 
@@ -16,5 +16,7 @@ router.get('/event/:eventId', authenticateToken, requireAdmin, apiLimiter, getRs
 
 // Admin badge: new RSVPs in the last 24 hours
 router.get('/admin/new-count', authenticateToken, requireAdmin, apiLimiter, getAdminNewRsvpCount);
+router.post('/admin/approve/:id', authenticateToken, requireAdmin, apiLimiter, approveRsvp);
+router.post('/admin/reject/:id', authenticateToken, requireAdmin, apiLimiter, rejectRsvp);
 
 export default router;

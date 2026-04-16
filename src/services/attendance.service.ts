@@ -495,7 +495,7 @@ export const getSessionsForUser = async (eventId: number, userId: number): Promi
 export const getUserAttendanceStats = async (userId: number): Promise<UserAttendanceStats> => {
   // Fetch all events the user has actively RSVPd to
   const userRsvps = await prisma.rsvp.findMany({
-    where: { userId, status: 'ATTENDING' },
+    where: { userId, status: 'CONFIRMED' },
     select: { eventId: true },
   });
   const rsvpEventIds = new Set(userRsvps.map((r) => r.eventId));
