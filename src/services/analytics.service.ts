@@ -9,7 +9,7 @@ export const getAdminAnalytics = async () => {
       prisma.user.count(),
       prisma.event.count(),
       prisma.attendance.count(),
-      prisma.rsvp.count({ where: { status: 'ATTENDING' } })
+      prisma.rsvp.count({ where: { status: 'CONFIRMED' } })
     ]);
 
     // Events by status
@@ -104,7 +104,7 @@ export const getAdminAnalytics = async () => {
       },
       include: {
         rsvps: {
-          where: { status: 'ATTENDING', waitlisted: false }
+          where: { status: 'CONFIRMED', waitlisted: false }
         },
         sessions: {
           include: {
@@ -211,7 +211,7 @@ export const getUserAnalytics = async (userId: number) => {
     // Live, RSVP-gated credit calculation — same business rule as attendance stats endpoint.
     // Credits are only earned for sessions where the user has an active RSVP for the event.
     const rsvpEventIdSet = new Set(
-      user.rsvps.filter(r => r.status === 'ATTENDING').map(r => r.event.id)
+      user.rsvps.filter(r => r.status === 'CONFIRMED').map(r => r.event.id)
     );
     const qualifyingAttendances = user.attendances.filter(a =>
       rsvpEventIdSet.has(a.session.eventId)
@@ -219,7 +219,7 @@ export const getUserAnalytics = async (userId: number) => {
     const totalCredits = qualifyingAttendances.reduce((sum, a) => sum + a.session.credits, 0);
     const eventsAttended = new Set(qualifyingAttendances.map(a => a.session.eventId)).size;
     const totalRSVPs = user.rsvps.length;
-    const confirmedRSVPs = user.rsvps.filter(r => r.status === 'ATTENDING').length;
+    const confirmedRSVPs = user.rsvps.filter(r => r.status === 'CONFIRMED').length;
 
     // Attendance rate
     const attendanceRate = confirmedRSVPs > 0
@@ -243,7 +243,7 @@ export const getUserAnalytics = async (userId: number) => {
 
     // Upcoming events
     const upcomingEvents = user.rsvps
-      .filter(r => r.event.status === EventStatus.UPCOMING && r.status === 'ATTENDING')
+      .filter(r => r.event.status === EventStatus.UPCOMING && r.status === 'CONFIRMED')
       .map(r => ({
         id: r.event.id,
         title: r.event.title,
@@ -330,7 +330,7 @@ export const getEventAnalytics = async (eventId: number) => {
 
     // RSVP stats
     const totalRSVPs = event.rsvps.length;
-    const confirmedRSVPs = event.rsvps.filter(r => r.status === 'ATTENDING' && !r.waitlisted).length;
+    const confirmedRSVPs = event.rsvps.filter(r => r.status === 'CONFIRMED' && !r.waitlisted).length;
     const waitlistedRSVPs = event.rsvps.filter(r => r.waitlisted).length;
     const capacityUtilization = ((confirmedRSVPs / event.capacity) * 100).toFixed(2);
 

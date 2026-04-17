@@ -1,4 +1,6 @@
+import { handleError } from "../utils/errorHandler";
 import { Request, Response } from 'express';
+import jwt from 'jsonwebtoken';
 import {
   createEventReview,
   getEventReviews,
@@ -61,7 +63,7 @@ export const createReview = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to create review'
+      message: handleError(error, 'Failed to create review')
     });
   }
 };
@@ -92,12 +94,24 @@ export const getReviews = async (req: Request, res: Response): Promise<void> => 
       return;
     }
 
-    const result = await getEventReviews(eventId, limit);
+    let isAdmin = false;
+    const authHeader = req.headers['authorization'];
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.split(' ')[1];
+        const decoded = jwt.verify(token, process.env.JWT_SECRET || '') as any;
+        if (decoded && decoded.type === 'admin') {
+          isAdmin = true;
+        }
+      } catch (e) {}
+    }
+
+    const result = await getEventReviews(eventId, limit, isAdmin);
     res.status(200).json(result);
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get reviews'
+      message: handleError(error, 'Failed to get reviews')
     });
   }
 };
@@ -148,7 +162,7 @@ export const getUserReview = async (req: Request, res: Response): Promise<void> 
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get user review'
+      message: handleError(error, 'Failed to get user review')
     });
   }
 };
@@ -183,7 +197,7 @@ export const getReviewStats = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get review stats'
+      message: handleError(error, 'Failed to get review stats')
     });
   }
 };
@@ -236,7 +250,7 @@ export const updateReview = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to update review'
+      message: handleError(error, 'Failed to update review')
     });
   }
 };
@@ -281,7 +295,7 @@ export const deleteReview = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to delete review'
+      message: handleError(error, 'Failed to delete review')
     });
   }
 };

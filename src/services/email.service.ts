@@ -97,6 +97,36 @@ const emailTemplates = {
     `,
   }),
 
+  waitlistJoined: (data: { eventTitle: string; userName: string }) => ({
+    subject: `Waitlisted: ${data.eventTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #f59e0b;">You're on the Waitlist!</h2>
+        <p>Hi ${data.userName},</p>
+        <p>The event "${data.eventTitle}" is currently full, and you've been added to the waitlist.</p>
+        <p>We'll notify you immediately if a spot opens up and you're promoted.</p>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">
+          PICT ACM Student Chapter - CCA Management System
+        </p>
+      </div>
+    `,
+  }),
+
+  rsvpRejected: (data: { eventTitle: string; userName: string }) => ({
+    subject: `Update regarding your RSVP for ${data.eventTitle}`,
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <h2 style="color: #ef4444;">RSVP Update</h2>
+        <p>Hi ${data.userName},</p>
+        <p>We regret to inform you that your RSVP for "${data.eventTitle}" has been rejected or revoked by the administrator.</p>
+        <p>If you have any questions, please contact the coordinator.</p>
+        <p style="color: #6b7280; font-size: 12px; margin-top: 30px;">
+          PICT ACM Student Chapter - CCA Management System
+        </p>
+      </div>
+    `,
+  }),
+
   announcement: (data: { title: string; message: string; priority: string }) => ({
     subject: `${data.priority === 'URGENT' ? '🚨 URGENT: ' : ''}${data.title}`,
     html: `
@@ -253,6 +283,28 @@ export const sendAttendanceMarkedEmail = async (
     eventTitle,
     sessionName,
     credits,
+  });
+};
+
+export const sendWaitlistJoinedEmail = async (
+  userEmail: string,
+  userName: string,
+  eventTitle: string
+): Promise<void> => {
+  await queueEmail(userEmail, 'waitlistJoined', {
+    userName,
+    eventTitle,
+  });
+};
+
+export const sendRsvpRejectedEmail = async (
+  userEmail: string,
+  userName: string,
+  eventTitle: string
+): Promise<void> => {
+  await queueEmail(userEmail, 'rsvpRejected', {
+    userName,
+    eventTitle,
   });
 };
 

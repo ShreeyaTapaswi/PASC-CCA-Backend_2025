@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { Request, Response } from 'express';
 import {
   getUserNotifications,
@@ -22,7 +23,7 @@ export const getNotifications = async (req: Request, res: Response): Promise<voi
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get notifications'
+      message: handleError(error, 'Failed to get notifications')
     });
   }
 };
@@ -46,7 +47,7 @@ export const markNotificationRead = async (req: Request, res: Response): Promise
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to mark notification as read'
+      message: handleError(error, 'Failed to mark notification as read')
     });
   }
 };
@@ -64,7 +65,7 @@ export const markAllRead = async (req: Request, res: Response): Promise<void> =>
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to mark all notifications as read'
+      message: handleError(error, 'Failed to mark all notifications as read')
     });
   }
 };
@@ -82,7 +83,7 @@ export const getUnreadCount = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get unread count'
+      message: handleError(error, 'Failed to get unread count')
     });
   }
 };

@@ -124,7 +124,16 @@ export const getEventsAdmin = async (
             prisma.event.findMany({
                 where,
                 skip,
-                take: limit,
+            include: {
+                _count: {
+                    select: {
+                        rsvps: {
+                            where: { status: 'CONFIRMED' }
+                        }
+                    }
+                }
+            },
+            take: limit,
                 orderBy: { startDate: 'asc' }
             }),
             prisma.event.count({ where })
@@ -341,7 +350,16 @@ export const fetchAllEvents = async (
 export const getEventByIdPublic = async (id: number): Promise<EventResponse> => {
     try {
         const event = await prisma.event.findUnique({
-            where: { id }
+            where: { id },
+            include: {
+                _count: {
+                    select: {
+                        rsvps: {
+                            where: { status: 'CONFIRMED' }
+                        }
+                    }
+                }
+            }
         });
 
         if (!event) {

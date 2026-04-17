@@ -1,7 +1,7 @@
 import { User } from "@prisma/client";
 import { ApiResponse, EventData } from "./event.types";
 
-export type RsvpStatus = "ATTENDING" | "NOT_ATTENDING";
+export type RsvpStatus = "CONFIRMED" | "WAITLISTED" | "REJECTED" | "ATTENDING" | "NOT_ATTENDING";
 
 // export interface Rsvp {
 //     id: number;
@@ -17,11 +17,13 @@ export interface RsvpCreate {
 }
 
 export interface Rsvp {
-    id: number; 
-    eventId: number; //ip
-    userId: number; //midleware
+    id?: number; 
+    eventId?: number; //ip
+    userId?: number; //midleware
     status: RsvpStatus;//ip
-    createdAt: Date;
+    createdAt?: Date;
+    remainingCapacity?: number;
+    waitlistPosition?: number;
 }
 
 export interface RsvpWithEvents {

@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { Request, Response } from 'express';
 import { getAdminAnalytics, getUserAnalytics, getEventAnalytics } from '../services/analytics.service';
 import fs from 'fs';
@@ -13,7 +14,7 @@ export const getAdminAnalyticsController = async (req: Request, res: Response): 
 
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get analytics'
+      message: handleError(error, 'Failed to get analytics')
     });
   }
 };
@@ -31,7 +32,7 @@ export const getUserAnalyticsController = async (req: Request, res: Response): P
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get user analytics'
+      message: handleError(error, 'Failed to get user analytics')
     });
   }
 };
@@ -49,7 +50,7 @@ export const getEventAnalyticsController = async (req: Request, res: Response): 
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get event analytics'
+      message: handleError(error, 'Failed to get event analytics')
     });
   }
 };

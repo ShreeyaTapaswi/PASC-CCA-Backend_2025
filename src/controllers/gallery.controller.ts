@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { Request, Response } from 'express';
 import {
   addEventGalleryImage,
@@ -14,7 +15,7 @@ export const addGalleryImage = async (req: Request, res: Response): Promise<void
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to add image'
+      message: handleError(error, 'Failed to add image')
     });
   }
 };
@@ -32,7 +33,7 @@ export const getGallery = async (req: Request, res: Response): Promise<void> => 
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get gallery'
+      message: handleError(error, 'Failed to get gallery')
     });
   }
 };
@@ -45,7 +46,7 @@ export const getAllGallery = async (req: Request, res: Response): Promise<void> 
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get gallery'
+      message: handleError(error, 'Failed to get gallery')
     });
   }
 };
@@ -63,7 +64,7 @@ export const updateGalleryImage = async (req: Request, res: Response): Promise<v
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to update image'
+      message: handleError(error, 'Failed to update image')
     });
   }
 };
@@ -81,7 +82,7 @@ export const deleteGalleryImage = async (req: Request, res: Response): Promise<v
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to delete image'
+      message: handleError(error, 'Failed to delete image')
     });
   }
 };

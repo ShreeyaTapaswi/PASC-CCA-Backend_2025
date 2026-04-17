@@ -168,4 +168,24 @@ export const notifyAnnouncement = async (userId: number, announcementId: number,
   });
 };
 
+export const notifyWaitlistAdded = async (userId: number, eventId: number, eventTitle: string) => {
+  return await createNotification({
+    userId,
+    type: NotificationType.WAITLIST_ADDED,
+    title: 'Added to Waitlist',
+    message: `RSVP successful! You have been added to the waitlist for ${eventTitle}.`,
+    data: { eventId },
+  });
+};
+
+export const notifyRsvpRejected = async (userId: number, eventId: number, eventTitle: string) => {
+  return await createNotification({
+    userId,
+    type: NotificationType.RSVP_REJECTED,
+    title: 'RSVP Rejected',
+    message: `Your RSVP for ${eventTitle} has been rejected.`,
+    data: { eventId },
+  });
+};
+
 

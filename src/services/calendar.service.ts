@@ -39,7 +39,7 @@ export const generateUserCalendarICS = async (userId: number): Promise<string> =
   const rsvps = await prisma.rsvp.findMany({
     where: {
       userId,
-      status: 'ATTENDING',
+      status: 'CONFIRMED',
       waitlisted: false
     },
     include: {

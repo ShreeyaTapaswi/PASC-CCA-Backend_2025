@@ -1,4 +1,5 @@
 import { Request, Response } from 'express';
+import { handleError } from '../utils/errorHandler';
 import { 
   createUser, 
   loginUser, 
@@ -73,7 +74,7 @@ export const registerUser = async (req: Request, res: Response): Promise<void> =
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Registration failed',
+      error: handleError(error, 'Registration failed'),
     });
   }
 };
@@ -125,7 +126,7 @@ export const loginUserController = async (req: Request, res: Response): Promise<
   } catch (error) {
     res.status(401).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Login failed',
+      error: handleError(error, 'Login failed'),
     });
   }
 };
@@ -173,7 +174,7 @@ export const logoutUserController = async (req: Request, res: Response): Promise
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Logout failed',
+      error: handleError(error, 'Logout failed'),
     });
   }
 };
@@ -227,7 +228,7 @@ export const registerAdmin = async (req: Request, res: Response): Promise<void> 
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Admin registration failed',
+      error: handleError(error, 'Admin registration failed'),
     });
   }
 };
@@ -279,7 +280,7 @@ export const loginAdminController = async (req: Request, res: Response): Promise
   } catch (error) {
     res.status(401).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Admin login failed',
+      error: handleError(error, 'Admin login failed'),
     });
   }
 };
@@ -327,7 +328,7 @@ export const logoutAdminController = async (req: Request, res: Response): Promis
   } catch (error) {
     res.status(400).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Logout failed',
+      error: handleError(error, 'Logout failed'),
     });
   }
 };
@@ -380,7 +381,7 @@ export const getCurrentUser = async (req: Request, res: Response): Promise<void>
   } catch (error) {
     res.status(401).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Authentication failed',
+      error: handleError(error, 'Authentication failed'),
     });
   }
 };
@@ -433,7 +434,7 @@ export const getCurrentAdmin = async (req: Request, res: Response): Promise<void
   } catch (error) {
     res.status(401).json({
       success: false,
-      error: error instanceof Error ? error.message : 'Authentication failed',
+      error: handleError(error, 'Authentication failed'),
     });
   }
 }; 
@@ -470,6 +471,6 @@ export const getUserCountController = async (req: Request, res: Response): Promi
     const count = await getUserCount();
     res.status(200).json({ success: true, count });
   } catch (error) {
-    res.status(500).json({ success: false, error: error instanceof Error ? error.message : 'Failed to get user count' });
+    res.status(500).json({ success: false, error: handleError(error, 'Failed to get user count') });
   }
 }; 

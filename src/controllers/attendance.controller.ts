@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { AttendanceSession } from '@prisma/client';
 import { Request, Response } from 'express';
 import { AttendanceResponse, AttendanceSessionResponse } from '../types/attendance.types';
@@ -137,7 +138,7 @@ export const createAttendanceSession = async (
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to create attendance session',
+      message: handleError(error, 'Failed to create attendance session'),
     });
   }
 };
@@ -263,7 +264,7 @@ export const updateAttendanceSession = async (
   } catch (error) {
     res.status(400).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to create attendance session',
+      message: handleError(error, 'Failed to create attendance session'),
     });
   }
 };
@@ -804,7 +805,7 @@ export const getSessionsByEventId = async (req: Request, res: Response): Promise
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to fetch attendance sessions',
+      message: handleError(error, 'Failed to fetch attendance sessions'),
     });
   }
 };
@@ -828,7 +829,7 @@ export const exportAttendanceSessionsToExcel = async (req: Request, res: Respons
     console.error('Export Error:', error);
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to export to Excel',
+      message: handleError(error, 'Failed to export to Excel'),
     });
   }
 };

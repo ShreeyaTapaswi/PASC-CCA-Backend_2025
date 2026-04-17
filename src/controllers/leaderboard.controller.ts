@@ -1,3 +1,4 @@
+import { handleError } from "../utils/errorHandler";
 import { Request, Response } from 'express';
 import { getLeaderboard, getUserRank, getCachedLeaderboard, getMyDivisionInfo } from '../services/leaderboard.service';
 import { LeaderboardPeriod } from '@prisma/client';
@@ -18,7 +19,7 @@ export const getLeaderboardController = async (req: Request, res: Response): Pro
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get leaderboard'
+      message: handleError(error, 'Failed to get leaderboard')
     });
   }
 };
@@ -40,7 +41,7 @@ export const getUserRankController = async (req: Request, res: Response): Promis
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get user rank'
+      message: handleError(error, 'Failed to get user rank')
     });
   }
 };
@@ -57,7 +58,7 @@ export const getMyDivisionInfoController = async (req: Request, res: Response): 
   } catch (error) {
     res.status(500).json({
       success: false,
-      message: error instanceof Error ? error.message : 'Failed to get division info'
+      message: handleError(error, 'Failed to get division info')
     });
   }
 };

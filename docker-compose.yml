@@ -325,9 +325,9 @@ services:
       - .env
     environment:
       NODE_ENV: development
-      PORT: 3001  
+      PORT: 4000  
     ports:
-      - "${APP_PORT:-3001}:${PORT:-3001}"
+      - "${APP_PORT}:${PORT}"
     networks:
       - pasc-network
     dns:
@@ -344,7 +344,7 @@ services:
         node dist/index.js
       "
     healthcheck:
-      test: ["CMD", "node", "-e", "require('http').get('http://localhost:3001/api/events', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
+      test: ["CMD", "node", "-e", "require('http').get('http://localhost:4000/api/events', (r) => {process.exit(r.statusCode === 200 ? 0 : 1)})"]
       interval: 30s
       timeout: 10s
       start_period: 40s

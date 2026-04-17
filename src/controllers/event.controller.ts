@@ -2,6 +2,7 @@ import { EventInput, EventResponse } from "src/types/event.types";
 import { deleteEventById, fetchAllEvents, getEventByIdPublic, getEventsAdmin, postEvent, updateEventService, fetchEventByStatus, getEventsForUser } from "../services/event.service";
 
 import { Request, Response } from "express";
+import { handleError } from "../utils/errorHandler";
 
 /**
  * @swagger
@@ -87,7 +88,7 @@ export const createEvent = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({
       success: false,
       message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unexpected error'
+      error: handleError(error, 'Unexpected error')
     });
   }
 };
@@ -170,7 +171,7 @@ export const getEventsForAdmin = async (req: Request, res: Response): Promise<vo
     res.status(500).json({
       success: false,
       message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unexpected error'
+      error: handleError(error, 'Unexpected error')
     });
   }
 }
@@ -215,7 +216,7 @@ export const getEventsOfUser = async (req: Request, res: Response): Promise<void
     res.status(500).json({
       success: false,
       message: 'Internal server error',
-      error: error instanceof Error ? error.message : 'Unexpected error'
+      error: handleError(error, 'Unexpected error')
     });
   }
 }
@@ -306,7 +307,7 @@ export const updateEvent = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({
       success: false,
       message: 'server error',
-      error: error instanceof Error ? error.message : 'Unexpected error'
+      error: handleError(error, 'Unexpected error')
     });
   }
 };
@@ -368,7 +369,7 @@ export const deleteEvent = async (req: Request, res: Response): Promise<void> =>
     res.status(500).json({
       success: false,
       message: 'server error',
-      error: error instanceof Error ? error.message : 'Unexpected error'
+      error: handleError(error, 'Unexpected error')
     });
   }
 }
@@ -464,7 +465,7 @@ export const getEvents = async (req: Request, res: Response): Promise<void> => {
     res.status(500).json({
       success: false,
       message: 'server error',
-      error: error instanceof Error ? error.message : 'Unexpected error',
+      error: handleError(error, 'Unexpected error'),
     });
   }
 };
@@ -525,7 +526,7 @@ export const getEventById = async (req: Request, res: Response): Promise<void> =
     res.status(500).json({
       success: false,
       message: 'server error',
-      error: error instanceof Error ? error.message : 'Unexpected error'
+      error: handleError(error, 'Unexpected error')
     });
   }
 }
@@ -594,7 +595,7 @@ export const getEventsByStatus = async (req: Request, res: Response): Promise<vo
     res.status(500).json({
       success: false,
       message: 'Server error',
-      error: error instanceof Error ? error.message : 'Unexpected error'
+      error: handleError(error, 'Unexpected error')
     });
   }
 };
