@@ -64,7 +64,7 @@ export const announcementCreateSchema = z.object({
   message: z.string().min(10, 'Message must be at least 10 characters'),
   priority: z.enum(['LOW', 'MEDIUM', 'HIGH', 'URGENT']),
   targetDepartment: z.array(z.enum(['CE', 'IT', 'ENTC', 'ECE', 'AIDS'])).optional(),
-  targetYear: z.array(z.number().int().min(1).max(4)).optional(),
+  targetYear: z.array(z.number().int().min(1).max(2)).optional(),
   expiresAt: z.string().or(z.date()).optional()
 });
 

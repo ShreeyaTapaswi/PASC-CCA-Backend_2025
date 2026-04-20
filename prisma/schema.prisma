@@ -60,6 +60,7 @@ model Event {
   startDate    DateTime
   endDate      DateTime
   imageUrl     String?
+  isDeleted    Boolean             @default(false)
   createdAt    DateTime            @default(now())
   updatedAt    DateTime            @updatedAt
   rsvps        Rsvp[]
