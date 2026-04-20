@@ -62,6 +62,8 @@ make clean     # Remove containers and data
 - ✅ Automatic credit calculation
 
 ### New Features (2025)
+> **Note for Closed Review:** Signup is disabled by default. A database seed script is provided to create accounts manually. Use `npm run seed` to generate the Admin and Student demo accounts.
+
 1. **Email Notifications** - Automated emails for events, RSVPs, attendance
 2. **Event Reviews** - Rating and feedback system
 3. **Event Resources** - Upload slides, videos, documents
