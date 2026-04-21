@@ -114,19 +114,38 @@ export const getAdminAnalytics = async () => {
       }
     });
 
-    let totalRSVPCount = 0;
-    let totalAttendanceCount = 0;
+    let expectedTotalAttendances = 0;
+    let actualTotalAttendances = 0;
 
     eventsWithStats.forEach((event: typeof eventsWithStats[number]) => {
-      totalRSVPCount += event.rsvps.length;
+      const sessionCount = event.sessions.length;
+      const rsvpUserIds = new Set(event.rsvps.map(r => r.userId));
+      
+      let attendancesButNotRsvpd = 0;
+      let eventActualAttendances = 0;
+
       event.sessions.forEach((session: typeof eventsWithStats[number]['sessions'][number]) => {
-        totalAttendanceCount += session.attendances.length;
+        eventActualAttendances += session.attendances.length;
+        session.attendances.forEach(a => {
+          if (!rsvpUserIds.has(a.userId)) {
+            attendancesButNotRsvpd++;
+          }
+        });
       });
+
+      actualTotalAttendances += eventActualAttendances;
+      expectedTotalAttendances += (event.rsvps.length * sessionCount) + attendancesButNotRsvpd;
     });
 
-    const attendanceRate = totalRSVPCount > 0
-      ? ((totalAttendanceCount / totalRSVPCount) * 100).toFixed(2)
+    let attendanceRateValue = expectedTotalAttendances > 0
+      ? (actualTotalAttendances / expectedTotalAttendances) * 100
       : 0;
+
+    if (attendanceRateValue > 100) {
+      attendanceRateValue = 100;
+    }
+
+    const attendanceRate = attendanceRateValue.toFixed(2);
 
     return {
       success: true,
@@ -215,10 +234,28 @@ export const getUserAnalytics = async (userId: number) => {
     const totalRSVPs = user.rsvps.length;
     const confirmedRSVPs = user.rsvps.filter(r => r.status === 'CONFIRMED').length;
 
-    // Attendance rate
-    const attendanceRate = confirmedRSVPs > 0
-      ? ((eventsAttended / confirmedRSVPs) * 100).toFixed(2)
-      : 0;
+    // Completion rate — session-level, matches getUserAttendanceStats formula exactly
+    const rsvpEventIds = new Set(user.rsvps.filter(r => r.status === 'CONFIRMED').map(r => r.eventId));
+
+    // Total sessions across all RSVP'd events (via DB count for accuracy)
+    let totalRsvpdSessions = 0;
+    if (rsvpEventIds.size > 0) {
+      totalRsvpdSessions = await prisma.attendanceSession.count({
+        where: { eventId: { in: [...rsvpEventIds] } },
+      });
+    }
+
+    // Sessions attended in events the user did NOT RSVP to
+    const sessionsAttendedInNonRsvpdEvents = qualifyingAttendances.filter(
+      (a) => !rsvpEventIds.has(a.session.eventId)
+    ).length;
+
+    // Denominator = all RSVP'd sessions + extra sessions attended without RSVP
+    const denominator = totalRsvpdSessions + sessionsAttendedInNonRsvpdEvents;
+
+    const attendanceRate = denominator > 0
+      ? Math.min((qualifyingAttendances.length / denominator) * 100, 100).toFixed(2)
+      : '0.00';
 
     // Credits by month (last 6 months)
     const sixMonthsAgo = new Date();
@@ -404,9 +441,22 @@ export const getEventAnalytics = async (eventId: number) => {
         attendanceStats: {
           totalAttendances,
           uniqueAttendees,
-          attendanceRate: confirmedRSVPs > 0
-            ? ((uniqueAttendees / confirmedRSVPs) * 100).toFixed(2)
-            : 0
+          attendanceRate: (() => {
+            const rsvpdUserIds = new Set(event.rsvps.filter((r: any) => r.status === 'CONFIRMED' && !r.waitlisted).map((r: any) => r.userId));
+            let attendeesButNotRsvpd = 0;
+            const uniqueAttendedIds = new Set(event.sessions.flatMap(s => s.attendances.map(a => a.userId)));
+            
+            uniqueAttendedIds.forEach(userId => {
+              if (!rsvpdUserIds.has(userId)) {
+                attendeesButNotRsvpd++;
+              }
+            });
+            
+            const totalExpected = confirmedRSVPs + attendeesButNotRsvpd;
+            let rate = totalExpected > 0 ? (uniqueAttendees / totalExpected) * 100 : 0;
+            if (rate > 100) rate = 100;
+            return rate.toFixed(2);
+          })()
         },
         demographics: {
           byDepartment: departmentBreakdown,
