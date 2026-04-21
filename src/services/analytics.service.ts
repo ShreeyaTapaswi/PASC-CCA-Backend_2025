@@ -208,14 +208,8 @@ export const getUserAnalytics = async (userId: number) => {
       };
     }
 
-    // Live, RSVP-gated credit calculation — same business rule as attendance stats endpoint.
-    // Credits are only earned for sessions where the user has an active RSVP for the event.
-    const rsvpEventIdSet = new Set(
-      user.rsvps.filter(r => r.status === 'CONFIRMED').map(r => r.event.id)
-    );
-    const qualifyingAttendances = user.attendances.filter(a =>
-      rsvpEventIdSet.has(a.session.eventId)
-    );
+    // Live credit calculation based purely on attendances
+    const qualifyingAttendances = user.attendances;
     const totalCredits = qualifyingAttendances.reduce((sum, a) => sum + a.session.credits, 0);
     const eventsAttended = new Set(qualifyingAttendances.map(a => a.session.eventId)).size;
     const totalRSVPs = user.rsvps.length;
