@@ -22,22 +22,39 @@ async function main() {
   });
   console.log(`✅ Admin account created/verified: ${admin.email}`);
 
-  // 2. Create Demo Student
-  const student = await prisma.user.upsert({
-    where: { email: 'shreeya.student@demo.com' },
+  // 2. Create Demo Student (FE - 1st Year)
+  const studentFE = await prisma.user.upsert({
+    where: { email: 'shreeya.student.fe@demo.com' },
     update: {},
     create: {
-      email: 'shreeya.student@demo.com',
-      name: 'Shreeya (Student Demo)',
+      email: 'shreeya.student.fe@demo.com',
+      name: 'Shreeya (FE Demo)',
       password: studentPassword,
       department: 'CE',
-      year: 3,
-      passoutYear: 2026,
-      roll: 101, // Mock roll number
+      year: 1,
+      passoutYear: 2028,
+      roll: 10001,
       hours: 0,
     },
   });
-  console.log(`✅ Student account created/verified: ${student.email}`);
+  console.log(`✅ FE Student account created/verified: ${studentFE.email}`);
+
+  // 3. Create Demo Student (SE - 2nd Year)
+  const studentSE = await prisma.user.upsert({
+    where: { email: 'shreeya.student.se@demo.com' },
+    update: {},
+    create: {
+      email: 'shreeya.student.se@demo.com',
+      name: 'Shreeya (SE Demo)',
+      password: studentPassword,
+      department: 'CE',
+      year: 2,
+      passoutYear: 2027,
+      roll: 21001,
+      hours: 0,
+    },
+  });
+  console.log(`✅ SE Student account created/verified: ${studentSE.email}`);
 
   console.log('Seed completed successfully!');
 }
