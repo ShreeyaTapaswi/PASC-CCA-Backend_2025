@@ -12,8 +12,8 @@ export const createSessionService = async (eventId: number, data: AttendanceSess
     where: { id: eventId },
   });
 
-  if (!event) {
-    throw new Error(`Event with ID ${eventId} does not exist.`);
+  if (!event || event.isDeleted) {
+    throw new Error(`Event with ID ${eventId} does not exist or has been deleted.`);
   }
 
   if (event.status === 'COMPLETED') {
@@ -98,6 +98,10 @@ export const updateSessionService = async (
     throw new Error(`Attendance session with ID ${sessionId} does not exist.`);
   }
 
+  if (session.event.isDeleted) {
+    throw new Error(`Event for this session has been deleted. Cannot update session.`);
+  }
+
   // Validate session dates are within the event date range
   if (startTime || endTime) {
     const event = await prisma.event.findUnique({
@@ -165,6 +169,7 @@ export const getSessionStatisticsService = async (sessionId: number) => {
       event: {
         select: {
           capacity: true,
+          isDeleted: true,
         },
       },
     },
@@ -172,6 +177,10 @@ export const getSessionStatisticsService = async (sessionId: number) => {
 
   if (!session) {
     throw new Error(`Session with ID ${sessionId} not found.`);
+  }
+
+  if (session.event.isDeleted) {
+    throw new Error(`Event for this session has been deleted.`);
   }
 
   // 2. Get attendance records and count
@@ -255,8 +264,8 @@ export const markSession = async (
     where: { id: eventId },
   });
 
-  if (!event) {
-    throw new Error("Event not found");
+  if (!event || event.isDeleted) {
+    throw new Error("Event not found or has been deleted");
   }
   //have to check session id is active or not 
   const session = await prisma.attendanceSession.findFirst({
@@ -366,8 +375,8 @@ export const getUserAttendanceSessionStatsService = async (userId: number, event
     where: { id: eventId },
   });
 
-  if (!event) {
-    throw new Error(`Event with ID ${eventId} does not exist.`);
+  if (!event || event.isDeleted) {
+    throw new Error(`Event with ID ${eventId} does not exist or has been deleted.`);
   }
 
   const attendanceSessions = await prisma.attendanceSession.findMany({
@@ -427,10 +436,10 @@ export const getSessionsForUser = async (eventId: number, userId: number): Promi
     }
   });
 
-  if (!event) {
+  if (!event || event.isDeleted) {
     return {
       success: false,
-      message: `Event with ID ${eventId} does not exist.`,
+      message: `Event with ID ${eventId} does not exist or has been deleted.`,
       data: undefined
     };
   }
@@ -501,15 +510,10 @@ export const getUserAttendanceStats = async (userId: number): Promise<UserAttend
   const rsvpEventIds = new Set(userRsvps.map((r) => r.eventId));
 
   // Fetch all attendance records for this user, including session details
-  const allAttendances = await prisma.attendance.findMany({
+  const qualifyingAttendances = await prisma.attendance.findMany({
     where: { userId },
     include: { session: true },
   });
-
-  // Only count sessions that belong to an event the user RSVPd to
-  const qualifyingAttendances = allAttendances.filter((a) =>
-    rsvpEventIds.has(a.session.eventId)
-  );
 
   let totalCredits = 0;
   let bestSession: UserPersonalBest = {
@@ -557,6 +561,11 @@ export const getSessionsByEventIdService = async (eventId: number) => {
   if (isNaN(eventId)) {
     throw new Error('Invalid event ID');
   }
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event || event.isDeleted) {
+    throw new Error('Event not found or has been deleted');
+  }
+
   const sessions = await prisma.attendanceSession.findMany({
     where: { eventId },
     orderBy: { startTime: 'asc' },
@@ -587,8 +596,8 @@ export const exportSessionsToExcel = async (eventId: number) => {
     where: { id: eventId },
   });
 
-  if (!event) {
-    throw new Error(`Event with ID ${eventId} does not exist.`);
+  if (!event || event.isDeleted) {
+    throw new Error(`Event with ID ${eventId} does not exist or has been deleted.`);
   }
 
   const sessions = await prisma.attendanceSession.findMany({

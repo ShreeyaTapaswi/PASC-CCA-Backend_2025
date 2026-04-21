@@ -52,6 +52,7 @@ export const postEvent = async (eventData: EventInput): Promise<EventResponse> =
 export const getEventsForUser = async (userId: number): Promise<EventUserResponse> => {
     try {
         const events = await prisma.event.findMany({
+            where: { isDeleted: { not: true } },
             orderBy: { startDate: 'asc' },
             include: {
                 rsvps: {
@@ -110,7 +111,7 @@ export const getEventsAdmin = async (
         await refreshEventStatuses();
 
         const skip = (page - 1) * limit;
-        const where: any = {};
+        const where: any = { isDeleted: { not: true } };
 
         // Filter by search keyword (title or description, case-insensitive)
         if (search) {
@@ -225,47 +226,15 @@ export const deleteEventById = async (id: number): Promise<EventResponse> => {
             throw new Error('Event not found');
         }
 
-        // Use a transaction to explicitly delete all related records first,
-        // then delete the event. This ensures deletion works even if DB-level
-        // CASCADE constraints are not applied.
-        await prisma.$transaction(async (tx: any) => {
-            // Get all session IDs for this event
-            const sessions = await tx.attendanceSession.findMany({
-                where: { eventId: id },
-                select: { id: true }
-            });
-            const sessionIds = sessions.map((s) => s.id);
-
-            // Delete attendances linked to those sessions
-            if (sessionIds.length > 0) {
-                await tx.attendance.deleteMany({
-                    where: { sessionId: { in: sessionIds } }
-                });
-            }
-
-            // Delete attendance sessions
-            await tx.attendanceSession.deleteMany({ where: { eventId: id } });
-
-            // Delete RSVPs
-            await tx.rsvp.deleteMany({ where: { eventId: id } });
-
-            // Delete reviews
-            await tx.eventReview.deleteMany({ where: { eventId: id } });
-
-            // Delete resources
-            await tx.eventResource.deleteMany({ where: { eventId: id } });
-
-            // Delete gallery
-            await tx.eventGallery.deleteMany({ where: { eventId: id } });
-
-            // Finally delete the event
-            await tx.event.delete({ where: { id } });
+        const updatedEvent = await prisma.event.update({
+            where: { id },
+            data: { isDeleted: true }
         });
 
         return {
             success: true,
             message: 'Event deleted successfully',
-            data: event
+            data: updatedEvent
         };
     } catch (error) {
         console.error('Service error (deleteEventById):', error);
@@ -282,7 +251,7 @@ export const fetchAllEvents = async (
 ): Promise<PaginatedEventResponse> => {
     try {
         const skip = (page - 1) * limit;
-        const where: any = {};
+        const where: any = { isDeleted: { not: true } };
 
         // Filter by search keyword
         if (search) {
@@ -362,7 +331,7 @@ export const getEventByIdPublic = async (id: number): Promise<EventResponse> => 
             }
         });
 
-        if (!event) {
+        if (!event || event.isDeleted) {
             return {
                 success: false,
                 message: 'Event not found',
@@ -386,7 +355,7 @@ export const getEventByIdPublic = async (id: number): Promise<EventResponse> => 
 export const fetchEventByStatus = async (status: 'UPCOMING' | 'ONGOING' | 'COMPLETED') => {
     try {
         const events = await prisma.event.findMany({
-            where: { status },
+            where: { status, isDeleted: { not: true } },
             orderBy: { startDate: 'asc' }
         });
 
