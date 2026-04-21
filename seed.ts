@@ -1,17 +1,17 @@
-import { PrismaClient } from '@prisma/client';
+import { PrismaClient, Department } from '@prisma/client';
 import bcryptjs from 'bcryptjs';
 
 const prisma = new PrismaClient();
 
 async function main() {
-  console.log('Running database seed...');
+  console.log('🚀 Starting bulk database seeding...');
 
-  // Hash passwords
+  // Hash passwords once for all students to save time
   const adminPassword = await bcryptjs.hash('PascAdmin@2025', 10);
   const studentPassword = await bcryptjs.hash('PascStudent@2025', 10);
 
   // 1. Create Demo Admin
-  const admin = await prisma.admin.upsert({
+  await prisma.admin.upsert({
     where: { email: 'shreeya.web24@gmail.com' },
     update: {},
     create: {
@@ -20,43 +20,60 @@ async function main() {
       password: adminPassword,
     },
   });
-  console.log(`✅ Admin account created/verified: ${admin.email}`);
+  console.log('✅ Admin account seeded.');
 
-  // 2. Create Demo Student (FE - 1st Year)
-  const studentFE = await prisma.user.upsert({
-    where: { email: 'shreeya.student.fe@demo.com' },
-    update: {},
-    create: {
-      email: 'shreeya.student.fe@demo.com',
-      name: 'Shreeya (FE Demo)',
-      password: studentPassword,
-      department: 'CE',
-      year: 1,
-      passoutYear: 2028,
-      roll: 10001,
-      hours: 0,
-    },
+  // 2. Generate FY (1st Year) Students
+  console.log('⏳ Seeding FY (1st Year) students...');
+  const fyStudents = [];
+  for (let div = 1; div <= 13; div++) {
+    for (let offset = 1; offset <= 30; offset++) {
+      const roll = 10000 + (div * 100) + offset;
+      fyStudents.push({
+        email: `pasc.fy.d${div}.r${roll}@demo.com`,
+        name: `FY Student D${div} R${roll}`,
+        password: studentPassword,
+        department: Department.CE,
+        year: 1,
+        passoutYear: 2028,
+        roll: roll,
+        hours: 0,
+      });
+    }
+  }
+  
+  await prisma.user.createMany({
+    data: fyStudents,
+    skipDuplicates: true,
   });
-  console.log(`✅ FE Student account created/verified: ${studentFE.email}`);
+  console.log(`✅ ${fyStudents.length} FY students seeded across 13 divisions.`);
 
-  // 3. Create Demo Student (SE - 2nd Year)
-  const studentSE = await prisma.user.upsert({
-    where: { email: 'shreeya.student.se@demo.com' },
-    update: {},
-    create: {
-      email: 'shreeya.student.se@demo.com',
-      name: 'Shreeya (SE Demo)',
-      password: studentPassword,
-      department: 'CE',
-      year: 2,
-      passoutYear: 2027,
-      roll: 21001,
-      hours: 0,
-    },
+  // 3. Generate SY (2nd Year) Students
+  console.log('⏳ Seeding SY (2nd Year) students...');
+  const syStudents = [];
+  for (let div = 1; div <= 13; div++) {
+    const studentsInDiv = div <= 3 ? 30 : 50;
+    for (let offset = 1; offset <= studentsInDiv; offset++) {
+      const roll = 21000 + (div * 100) + offset;
+      syStudents.push({
+        email: `pasc.sy.d${div}.r${roll}@demo.com`,
+        name: `SY Student D${div} R${roll}`,
+        password: studentPassword,
+        department: Department.CE,
+        year: 2,
+        passoutYear: 2027,
+        roll: roll,
+        hours: 0,
+      });
+    }
+  }
+
+  await prisma.user.createMany({
+    data: syStudents,
+    skipDuplicates: true,
   });
-  console.log(`✅ SE Student account created/verified: ${studentSE.email}`);
+  console.log(`✅ ${syStudents.length} SY students seeded across 13 divisions.`);
 
-  console.log('Seed completed successfully!');
+  console.log('✨ Seed completed successfully! Total students seeded: ' + (fyStudents.length + syStudents.length));
 }
 
 main()
