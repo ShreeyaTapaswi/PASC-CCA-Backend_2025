@@ -205,10 +205,14 @@ export const getSessionStatisticsService = async (sessionId: number) => {
   const totalExpectedAttendees = session.event.capacity || totalAttendees;
 
   // 4. Calculate attendance rate
-  const attendanceRate =
+  let attendanceRate =
     totalExpectedAttendees > 0
       ? (totalAttendees / totalExpectedAttendees) * 100
       : 0;
+
+  if (attendanceRate > 100) {
+    attendanceRate = 100;
+  }
 
   // 5. Format the attendance list
   const attendanceList = attendanceRecords.map((record) => ({
@@ -535,17 +539,28 @@ export const getUserAttendanceStats = async (userId: number): Promise<UserAttend
     }
   });
 
-  // completionRate = sessions attended (qualifying) / total sessions of RSVPd events
+  // completionRate = sessions attended / (total sessions in RSVP'd events + sessions attended in non-RSVP'd events)
+  // This guarantees the rate can never logically exceed 100%.
   let totalRsvpdSessions = 0;
   if (rsvpEventIds.size > 0) {
     totalRsvpdSessions = await prisma.attendanceSession.count({
       where: { eventId: { in: [...rsvpEventIds] } },
     });
   }
-  const completionRate =
-    totalRsvpdSessions > 0
-      ? (qualifyingAttendances.length / totalRsvpdSessions) * 100
-      : 0;
+
+  // Count sessions attended from events the user did NOT RSVP to
+  const sessionsAttendedInNonRsvpdEvents = qualifyingAttendances.filter(
+    (a) => !rsvpEventIds.has(a.session.eventId)
+  ).length;
+
+  // Denominator: all sessions the user was "expected" to possibly attend
+  // = all sessions from RSVP'd events + any extra sessions actually attended (without RSVP)
+  const denominator = totalRsvpdSessions + sessionsAttendedInNonRsvpdEvents;
+
+  // Math.min as a final safety net so floating-point can never push past 100
+  const completionRate = denominator > 0
+    ? Math.min((qualifyingAttendances.length / denominator) * 100, 100)
+    : 0;
 
   return {
     sessionsAttended: qualifyingAttendances.length,
