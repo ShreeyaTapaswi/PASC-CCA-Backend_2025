@@ -145,7 +145,7 @@ async function startServer() {
   await runNotificationCleanup();
   setInterval(runNotificationCleanup, NOTIFICATION_CLEANUP_INTERVAL_MS);
 
-  app.listen(PORT, () => {
+  app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);
   });
 }
