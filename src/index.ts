@@ -16,6 +16,7 @@ import announcementRoutes from './routes/announcement.routes';
 import analyticsRoutes from './routes/analytics.routes';
 import calendarRoutes from './routes/calendar.routes';
 import notificationRoutes from './routes/notification.routes';
+import inviteRoutes from './routes/invite.routes';
 import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
 import { deleteOldNotifications, NOTIFICATION_EXPIRY_DAYS } from './services/notification.service';
@@ -89,6 +90,7 @@ app.use('/api/announcements', announcementRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/calendar', calendarRoutes);
 app.use('/api/notifications', notificationRoutes);
+app.use('/api/admin', inviteRoutes);
 
 const PORT = process.env.PORT || 4000; /////////////////
 

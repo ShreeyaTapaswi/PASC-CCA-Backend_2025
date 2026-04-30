@@ -63,20 +63,10 @@ import {
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 export const registerUser = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const userData = req.body;
-    await createUser(userData);
-    
-    res.status(201).json({
-      success: true,
-      message: 'User registered successfully',
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: handleError(error, 'Registration failed'),
-    });
-  }
+  res.status(403).json({
+    success: false,
+    error: 'Registrations are currently closed. This is an invite-only review.',
+  });
 };
 
 /**
@@ -217,20 +207,10 @@ export const logoutUserController = async (req: Request, res: Response): Promise
  *               $ref: '#/components/schemas/ErrorResponse'
  */
 export const registerAdmin = async (req: Request, res: Response): Promise<void> => {
-  try {
-    const adminData = req.body;
-    await createAdmin(adminData);
-    
-    res.status(201).json({
-      success: true,
-      message: 'Admin registered successfully',
-    });
-  } catch (error) {
-    res.status(400).json({
-      success: false,
-      error: handleError(error, 'Admin registration failed'),
-    });
-  }
+  res.status(403).json({
+    success: false,
+    error: 'Registrations are currently closed. This is an invite-only review.',
+  });
 };
 
 /**
