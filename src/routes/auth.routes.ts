@@ -8,7 +8,9 @@ import {
   loginAdminController,
   logoutAdminController,
   getCurrentAdmin,
-  getUserCountController
+  getUserCountController,
+  forgotPasswordController,
+  resetPasswordController
 } from '../controllers/auth.controller';
 import { authenticateToken, requireAdmin } from '../middlewares/auth.middleware';
 import { validate, userRegisterSchema, adminRegisterSchema, loginSchema } from '../middlewares/validation.middleware';
@@ -30,5 +32,9 @@ router.get('/admin/me', authenticateToken, requireAdmin, getCurrentAdmin);
 
 // Add user count route for admin
 router.get('/user/count', authenticateToken, requireAdmin, getUserCountController);
+
+// Password reset routes
+router.post('/forgot-password', authLimiter, forgotPasswordController);
+router.post('/reset-password', authLimiter, resetPasswordController);
 
 export default router; 

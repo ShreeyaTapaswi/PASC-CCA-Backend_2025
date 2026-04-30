@@ -11,6 +11,8 @@ import {
   ITokenPayload
 } from '../types/auth.types';
 import  prisma  from '../lib/prisma';
+import { sendPasswordResetEmail } from './email.service';
+import crypto from 'crypto';
 const JWT_SECRET = process.env.JWT_SECRET || 'your-secret-key';
 
 // Pure function to hash password
@@ -243,4 +245,66 @@ export const getAdminById = async (id: number): Promise<IAdmin | null> => {
 export const getUserCount = async (): Promise<number> => {
   const count = await prisma.user.count();
   return count;
-}; 
+};
+
+// Forgot Password - Generate and send token
+export const forgotPassword = async (email: string): Promise<void> => {
+  // Check if user or admin exists
+  const user = await prisma.user.findUnique({ where: { email } });
+  const admin = await prisma.admin.findUnique({ where: { email } });
+
+  if (!user && !admin) {
+    throw new Error('No account found with this email address.');
+  }
+
+  const name = user ? user.name || 'Student' : admin?.name || 'Admin';
+
+  // Generate 6-digit code
+  const token = Math.floor(100000 + Math.random() * 900000).toString();
+  const expiresAt = new Date(Date.now() + 60 * 60 * 1000); // 1 hour
+
+  // Store token (upsert to handle multiple requests)
+  await prisma.passwordResetToken.upsert({
+    where: { token },
+    update: { email, expiresAt },
+    create: { token, email, expiresAt },
+  });
+
+  // Send email
+  await sendPasswordResetEmail(email, name, token, expiresAt.toLocaleString());
+};
+
+// Reset Password - Verify token and update password
+export const resetPassword = async (token: string, newPassword: string): Promise<void> => {
+  const resetRecord = await prisma.passwordResetToken.findUnique({
+    where: { token },
+  });
+
+  if (!resetRecord || resetRecord.expiresAt < new Date()) {
+    throw new Error('Invalid or expired reset code.');
+  }
+
+  const hashedPassword = await bcrypt.hash(newPassword, 10);
+
+  // Update User or Admin
+  const user = await prisma.user.findUnique({ where: { email: resetRecord.email } });
+  const admin = await prisma.admin.findUnique({ where: { email: resetRecord.email } });
+
+  if (user) {
+    await prisma.user.update({
+      where: { id: user.id },
+      data: { password: hashedPassword },
+    });
+  } else if (admin) {
+    await prisma.admin.update({
+      where: { id: admin.id },
+      data: { password: hashedPassword },
+    });
+  }
+
+  // Cleanup tokens for this email
+  await prisma.passwordResetToken.deleteMany({
+    where: { email: resetRecord.email },
+  });
+};
+ 
