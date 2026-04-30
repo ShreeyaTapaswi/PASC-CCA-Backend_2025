@@ -9,7 +9,10 @@ import {
   logoutAdmin,
   getUserById,
   getAdminById,
-  getUserCount
+  getAdminById,
+  getUserCount,
+  forgotPassword,
+  resetPassword
 } from '../services/auth.service';
 
 /**
@@ -437,7 +440,89 @@ export const getCurrentAdmin = async (req: Request, res: Response): Promise<void
       error: handleError(error, 'Authentication failed'),
     });
   }
-}; 
+};
+
+/**
+ * @swagger
+ * /api/auth/forgot-password:
+ *   post:
+ *     summary: Request a password reset code
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - email
+ *             properties:
+ *               email:
+ *                 type: string
+ *                 format: email
+ *     responses:
+ *       200:
+ *         description: Reset code sent to email
+ *       400:
+ *         description: Account not found
+ */
+export const forgotPasswordController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { email } = req.body;
+    await forgotPassword(email);
+    res.status(200).json({
+      success: true,
+      message: 'Password reset code has been sent to your email.',
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: handleError(error, 'Failed to process forgot password request'),
+    });
+  }
+};
+
+/**
+ * @swagger
+ * /api/auth/reset-password:
+ *   post:
+ *     summary: Reset password using the code
+ *     tags: [Authentication]
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required:
+ *               - token
+ *               - newPassword
+ *             properties:
+ *               token:
+ *                 type: string
+ *               newPassword:
+ *                 type: string
+ *     responses:
+ *       200:
+ *         description: Password updated successfully
+ *       400:
+ *         description: Invalid or expired token
+ */
+export const resetPasswordController = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const { token, newPassword } = req.body;
+    await resetPassword(token, newPassword);
+    res.status(200).json({
+      success: true,
+      message: 'Your password has been updated successfully.',
+    });
+  } catch (error) {
+    res.status(400).json({
+      success: false,
+      error: handleError(error, 'Failed to reset password'),
+    });
+  }
+};
 
 /**
  * @swagger

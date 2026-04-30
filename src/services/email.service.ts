@@ -141,6 +141,26 @@ const emailTemplates = {
       </div>
     `,
   }),
+
+  passwordReset: (data: { userName: string; resetToken: string; expiresAt: string }) => ({
+    subject: 'Password Reset Request - PASC CCA',
+    html: `
+      <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #e5e7eb; border-radius: 12px;">
+        <h2 style="color: #2563eb; text-align: center;">Password Reset</h2>
+        <p>Hi ${data.userName},</p>
+        <p>We received a request to reset your password for the PASC CCA Platform. Use the code below to reset it:</p>
+        <div style="background: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0; text-align: center;">
+          <span style="font-size: 32px; font-weight: bold; letter-spacing: 5px; color: #1e40af;">${data.resetToken}</span>
+        </div>
+        <p>This code will expire at <strong>${data.expiresAt}</strong>.</p>
+        <p>If you didn't request this, you can safely ignore this email.</p>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 20px 0;" />
+        <p style="color: #6b7280; font-size: 12px; text-align: center;">
+          PICT ACM Student Chapter - CCA Management System
+        </p>
+      </div>
+    `,
+  }),
 };
 
 // Queue email for sending
@@ -318,6 +338,19 @@ export const sendAnnouncementEmail = async (
     title,
     message,
     priority,
+  });
+};
+
+export const sendPasswordResetEmail = async (
+  userEmail: string,
+  userName: string,
+  resetToken: string,
+  expiresAt: string
+): Promise<void> => {
+  await queueEmail(userEmail, 'passwordReset', {
+    userName,
+    resetToken,
+    expiresAt,
   });
 };
 
