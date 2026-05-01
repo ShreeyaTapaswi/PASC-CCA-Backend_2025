@@ -1,3 +1,4 @@
+import 'dotenv/config';
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
@@ -17,7 +18,6 @@ import analyticsRoutes from './routes/analytics.routes';
 import calendarRoutes from './routes/calendar.routes';
 import notificationRoutes from './routes/notification.routes';
 import inviteRoutes from './routes/invite.routes';
-import dotenv from 'dotenv';
 import { prisma } from './lib/prisma';
 import { deleteOldNotifications, NOTIFICATION_EXPIRY_DAYS } from './services/notification.service';
 import { refreshEventStatuses } from './services/event.service';
@@ -33,9 +33,6 @@ import {
 } from './controllers/auth.controller';
 import { authenticateToken, requireUser, requireAdmin } from './middlewares/auth.middleware';
 
-
-// Load environment variables
-dotenv.config();
 
 const app = express();
 
