@@ -9,7 +9,6 @@ import {
   logoutAdmin,
   getUserById,
   getAdminById,
-  getAdminById,
   getUserCount,
   forgotPassword,
   resetPassword
