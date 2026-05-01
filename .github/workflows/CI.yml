@@ -27,7 +27,7 @@ jobs:
           --health-retries 5
 
     env:
-      DATABASE_URL: ${{ secrets.DATABASE_URL || 'postgresql://postgres:postgres@localhost:5432/cca_test?schema=public' }}
+      DATABASE_URL: postgresql://postgres:postgres@localhost:5432/cca_test
       NODE_ENV: test
       JWT_SECRET: ${{ secrets.JWT_SECRET || 'ci-test-secret-key-at-least-32-characters-long' }}
       FRONTEND_URL: http://localhost:3000
