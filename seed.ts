@@ -1,7 +1,14 @@
 import { PrismaClient, Department } from '@prisma/client';
+import { Pool } from 'pg';
+import { PrismaPg } from '@prisma/adapter-pg';
 import bcryptjs from 'bcryptjs';
+import * as dotenv from 'dotenv';
 
-const prisma = new PrismaClient();
+dotenv.config();
+
+const pool = new Pool({ connectionString: process.env.DATABASE_URL });
+const adapter = new PrismaPg(pool);
+const prisma = new PrismaClient({ adapter });
 
 async function main() {
   console.log('🚀 Starting bulk database seeding...');
@@ -24,7 +31,7 @@ async function main() {
 
   // 2. Generate FY (1st Year) Students
   console.log('⏳ Seeding FY (1st Year) students...');
-  const fyStudents = [];
+  const fyStudents: Parameters<typeof prisma.user.create>[0]['data'][] = [];
   for (let div = 1; div <= 13; div++) {
     for (let offset = 1; offset <= 30; offset++) {
       const roll = 10000 + (div * 100) + offset;
@@ -49,7 +56,7 @@ async function main() {
 
   // 3. Generate SY (2nd Year) Students
   console.log('⏳ Seeding SY (2nd Year) students...');
-  const syStudents = [];
+  const syStudents: Parameters<typeof prisma.user.create>[0]['data'][] = [];
   for (let div = 1; div <= 13; div++) {
     const studentsInDiv = div <= 3 ? 30 : 50;
     for (let offset = 1; offset <= studentsInDiv; offset++) {
