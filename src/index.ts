@@ -21,6 +21,8 @@ import inviteRoutes from './routes/invite.routes';
 import { prisma } from './lib/prisma';
 import { deleteOldNotifications, NOTIFICATION_EXPIRY_DAYS } from './services/notification.service';
 import { refreshEventStatuses } from './services/event.service';
+import cron from 'node-cron';
+import { processEmailQueue, sendDailyEventReminders } from './services/email.service';
 import {
   registerUser,
   loginUserController,
@@ -141,6 +143,26 @@ async function startServer() {
 
   await runNotificationCleanup();
   setInterval(runNotificationCleanup, NOTIFICATION_CLEANUP_INTERVAL_MS);
+
+  // Schedule email queue processing (every minute)
+  cron.schedule('* * * * *', async () => {
+    console.log('[Cron] Running email queue processor...');
+    try {
+      await processEmailQueue(10);
+    } catch (err) {
+      console.error('[Cron] Email queue processor failed:', err);
+    }
+  });
+
+  // Schedule daily event reminders (every day at midnight)
+  cron.schedule('0 0 * * *', async () => {
+    console.log('[Cron] Running daily event reminders job...');
+    try {
+      await sendDailyEventReminders();
+    } catch (err) {
+      console.error('[Cron] Daily event reminders job failed:', err);
+    }
+  });
 
   app.listen(Number(PORT), '0.0.0.0', () => {
     console.log(`API Documentation available at http://localhost:${PORT}/api-docs`);

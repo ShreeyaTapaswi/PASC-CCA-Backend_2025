@@ -1,6 +1,6 @@
 import nodemailer from 'nodemailer';
 import { prisma } from '../lib/prisma';
-import { EmailStatus } from '@prisma/client';
+import { EmailStatus, RsvpStatus } from '@prisma/client';
 
 // Email transporter configuration
 const createTransporter = () => {
@@ -352,6 +352,51 @@ export const sendPasswordResetEmail = async (
     resetToken,
     expiresAt,
   });
+};
+
+// Send daily reminders for events happening tomorrow
+export const sendDailyEventReminders = async (): Promise<void> => {
+  const tomorrowStart = new Date();
+  tomorrowStart.setDate(tomorrowStart.getDate() + 1);
+  tomorrowStart.setHours(0, 0, 0, 0);
+
+  const tomorrowEnd = new Date();
+  tomorrowEnd.setDate(tomorrowEnd.getDate() + 1);
+  tomorrowEnd.setHours(23, 59, 59, 999);
+
+  const events = await prisma.event.findMany({
+    where: {
+      startDate: {
+        gte: tomorrowStart,
+        lte: tomorrowEnd,
+      },
+      isDeleted: false,
+    },
+    include: {
+      rsvps: {
+        where: {
+          status: RsvpStatus.CONFIRMED,
+        },
+        include: {
+          user: true,
+        },
+      },
+    },
+  });
+
+  for (const event of events) {
+    for (const rsvp of event.rsvps) {
+      if (rsvp.user && rsvp.user.email) {
+        await sendEventReminderEmail(
+          rsvp.user.email,
+          rsvp.user.name || 'User',
+          event.title,
+          event.startDate.toLocaleString(),
+          event.location
+        );
+      }
+    }
+  }
 };
 
 
